@@ -1,6 +1,6 @@
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
-const APP_VERSION="11.6.2";
+const APP_VERSION="11.6.3";
 const APP_CHANNEL="Cloud Test";
 // ---------------- CLOUD LAB / SUPABASE ----------------
 // Browser-safe Supabase publishable key. Database access is protected by RLS.
@@ -174,17 +174,22 @@ function openCloudAuth(){
       if(!dirty){
         try{
           const cloud=await cloudReadSnapshot();
-          applyCloudSnapshot(cloud.snapshot);
-          localStorage.setItem("lifeAdminLastCloudSync",cloud.updatedAt||new Date().toISOString());
-          localStorage.removeItem("lifeAdminCloudDirty");
-          closeModal();openSettings();render();toast("Connected — latest cloud data loaded");
-          refreshCloudSettings();
-          return;
-        }catch(syncErr){
-          // No snapshot yet means this is a genuinely new cloud account.
-          // Keep the local workspace and mark it for the first manual sync.
-          console.info("No existing cloud snapshot on sign-in",syncErr);
+          if(cloud){
+            applyCloudSnapshot(cloud.snapshot);
+            localStorage.setItem("lifeAdminLastCloudSync",cloud.updatedAt||new Date().toISOString());
+            localStorage.removeItem("lifeAdminCloudDirty");
+            closeModal();openSettings();render();toast("Connected — latest cloud data loaded");
+            refreshCloudSettings();
+            return;
+          }
+          // A signed-in account can legitimately have no snapshot yet.
+          // Keep the local workspace and let the first Sync create it.
+          console.info("No cloud snapshot exists yet for this account");
           localStorage.setItem("lifeAdminCloudDirty","1");
+        }catch(syncErr){
+          // Real database/RLS/network errors must not be mistaken for a missing snapshot.
+          console.error("Cloud snapshot check failed",syncErr);
+          throw syncErr;
         }
       }else{
         toast("Connected — local changes are waiting to sync");
@@ -265,8 +270,9 @@ async function cloudReadSnapshot(){
     .limit(1);
   if(error)throw error;
   const row=data?.[0];
+  if(!row)return null;
   const snapshot=row?.data&&typeof row.data==="object"?row.data:null;
-  if(!snapshot)throw new Error("No cloud snapshot found");
+  if(!snapshot)throw new Error("Cloud snapshot is invalid");
   return {snapshot,updatedAt:row.updated_at||snapshot.exportDate||null};
 }
 
@@ -293,6 +299,23 @@ async function cloudSync(){
     const dirty=localStorage.getItem("lifeAdminCloudDirty")==="1";
     const lastSync=localStorage.getItem("lifeAdminLastCloudSync");
     const cloud=await cloudReadSnapshot();
+
+    // A brand-new account has no row yet. In that case the local workspace
+    // becomes the first cloud snapshot instead of reporting a sync failure.
+    if(!cloud){
+      toast("Syncing… creating your first cloud snapshot");
+      await cloudWriteSnapshot();
+      const created=await cloudReadSnapshot();
+      if(!created)throw new Error("Cloud snapshot could not be created");
+      applyCloudSnapshot(created.snapshot);
+      localStorage.setItem("lifeAdminLastCloudSync",created.updatedAt||new Date().toISOString());
+      localStorage.removeItem("lifeAdminCloudDirty");
+      render();
+      toast("✓ First cloud snapshot created");
+      refreshCloudSettings();
+      return;
+    }
+
     const cloudTime=cloud.updatedAt?Date.parse(cloud.updatedAt):NaN;
     const localTime=lastSync?Date.parse(lastSync):NaN;
 
