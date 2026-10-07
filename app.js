@@ -1,7 +1,7 @@
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
-const APP_VERSION="12.1.11";
-const APP_CHANNEL="Beta";
+const APP_VERSION="0.0.1";
+const APP_CHANNEL="Friends & Family Beta";
 // ---------------- CLOUD SYNC / SUPABASE ----------------
 // Browser-safe Supabase publishable key. Database access is protected by RLS.
 const SUPABASE_URL="https://cfpfcwtozxhvgcloyupm.supabase.co";
@@ -802,7 +802,7 @@ function openSettings(){
 }
 function openTerms(){
   openModal(`<div class="modal-header"><div><span class="mini-label">LIFE ADMIN</span><h3>Terms & Conditions</h3></div><button type="button" class="close" id="close">${icons.close}</button></div>
-    <div class="legal-intro"><strong>Life Admin — Family Beta</strong><span>Last updated 8 October 2026</span></div>
+    <div class="legal-intro"><strong>Life Admin — Friends & Family Beta</strong><span>Last updated 8 October 2026</span></div>
     <div class="legal-copy">
       <section class="legal-section"><h4>1. About Life Admin</h4><p>Life Admin is a personal organisation and planning app designed to help you keep track of bills, tasks, reminders, calendar events, money information and other everyday administration. The app is currently provided as a beta service and features may change, be added, or be removed as development continues.</p></section>
       <section class="legal-section"><h4>2. Beta use</h4><p>By using the beta version, you understand that the app is still being tested and may contain bugs, errors, interruptions or incomplete features. You should keep your own backups of important information and should not rely on Life Admin as the sole record of important dates, payments, documents or other critical information.</p></section>

@@ -1301,3 +1301,288 @@ button{-webkit-tap-highlight-color:transparent;}
 .legal-section p:last-child{margin-bottom:0}
 .legal-section a{color:var(--accent);font-weight:750;text-decoration:underline;text-underline-offset:2px}
 .legal-footer{margin-top:14px;padding:10px 11px;border-radius:12px;background:var(--surface-muted);color:var(--muted);font-size:9px;line-height:1.5}
+
+/* =========================================================
+   V0.0.1 — FRIENDS & FAMILY BETA / FULL POLISH
+   Final visual system pass. No data/cloud logic changed.
+   ========================================================= */
+:root{
+  --surface-0:color-mix(in srgb,var(--bg) 94%,white);
+  --surface-1:var(--card);
+  --surface-2:var(--surface-soft);
+  --hairline:color-mix(in srgb,var(--line) 78%,transparent);
+  --shadow-soft:0 5px 18px color-mix(in srgb,var(--text) 5%,transparent);
+  --shadow-card:0 9px 28px color-mix(in srgb,var(--text) 7%,transparent);
+  --shadow-float:0 14px 32px color-mix(in srgb,var(--accent) 17%,transparent);
+  --focus-strong:color-mix(in srgb,var(--accent) 30%,transparent);
+}
+
+html{background:var(--bg);scroll-behavior:smooth}
+body{
+  background:
+    radial-gradient(900px 360px at 50% -120px,color-mix(in srgb,var(--accent-soft) 72%,transparent),transparent 68%),
+    var(--bg);
+  color:var(--text);
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  -webkit-tap-highlight-color:transparent;
+}
+button,input,select,textarea{font:inherit}
+button,a,.icon-btn,.nav-item,.nav-add,.category-chip,.filter-chip,.stat-card,.home-tile,.item,.calendar-add{touch-action:manipulation}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
+  outline:3px solid var(--focus-strong)!important;
+  outline-offset:2px!important;
+}
+::selection{background:var(--accent-soft);color:var(--text)}
+
+/* Header — quieter, more premium, better hierarchy. */
+.topbar{
+  position:relative;
+  padding:18px 17px 13px!important;
+  margin-bottom:2px;
+}
+.topbar:after{
+  content:"";
+  position:absolute;
+  left:17px;right:17px;bottom:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--hairline),transparent);
+}
+.brand-lockup{gap:10px!important}
+.brand-lockup .brand-mark{
+  width:40px!important;height:40px!important;border-radius:12px!important;
+  box-shadow:0 7px 18px color-mix(in srgb,var(--accent) 14%,transparent)!important;
+  background:var(--card);
+}
+.header-copy{min-width:0}
+.brand-lockup h1{font-size:23px!important;line-height:1.08!important;font-weight:800!important;letter-spacing:-.045em!important}
+.page-subtitle{color:var(--muted)!important}
+.header-actions{gap:6px!important}
+.topbar .icon-btn{
+  width:39px!important;height:39px!important;border-radius:12px!important;
+  box-shadow:0 3px 12px color-mix(in srgb,var(--text) 5%,transparent)!important;
+  background:color-mix(in srgb,var(--card) 96%,var(--accent-soft))!important;
+  transition:transform .16s ease,box-shadow .16s ease,background .16s ease;
+}
+.topbar .icon-btn:hover{box-shadow:0 6px 17px color-mix(in srgb,var(--text) 8%,transparent)!important}
+.topbar .icon-btn:active{transform:scale(.94)!important}
+
+/* Home hero — stronger first impression without becoming loud. */
+.hero-card{
+  position:relative;overflow:hidden;
+  margin:5px 16px 12px!important;
+  padding:19px!important;
+  border-radius:23px!important;
+  background:
+    radial-gradient(220px 120px at 100% 0,color-mix(in srgb,var(--hero-accent) 20%,transparent),transparent 72%),
+    linear-gradient(145deg,var(--hero),color-mix(in srgb,var(--hero) 76%,var(--hero-2)))!important;
+  border:1px solid color-mix(in srgb,var(--hero-accent) 17%,transparent)!important;
+  box-shadow:0 13px 32px color-mix(in srgb,var(--hero) 19%,transparent)!important;
+}
+.hero-card:after{
+  content:"";position:absolute;width:150px;height:150px;border-radius:50%;
+  right:-82px;bottom:-95px;border:1px solid color-mix(in srgb,var(--hero-accent) 15%,transparent);
+  pointer-events:none;
+}
+.compact-hero .score-row strong{font-size:30px!important}
+.compact-hero p{max-width:82%;line-height:1.45!important}
+.status-badge{
+  width:44px!important;height:44px!important;border-radius:14px!important;
+  box-shadow:0 7px 18px color-mix(in srgb,var(--hero-accent) 16%,transparent);
+}
+
+/* Stat cards — clear hierarchy, category colour, restrained depth. */
+.stats-grid{gap:9px!important;padding-bottom:14px!important}
+.stat-card{
+  min-height:91px;
+  border:1px solid var(--hairline)!important;
+  background:linear-gradient(180deg,var(--card),color-mix(in srgb,var(--card) 93%,var(--accent-soft)))!important;
+  box-shadow:var(--shadow-soft)!important;
+  padding:10px 7px!important;
+}
+.stat-card:hover{transform:translateY(-2px)!important;box-shadow:var(--shadow-card)!important}
+.stat-card b{font-size:18px!important;line-height:1!important}
+.stat-icon{box-shadow:inset 0 0 0 1px color-mix(in srgb,currentColor 9%,transparent)}
+
+/* Section headers and cards share one spacing rhythm. */
+.section-head{margin-top:20px!important}
+.section-head h2{letter-spacing:-.035em!important}
+.home-section-head{margin-top:18px!important}
+.text-btn{min-height:32px;display:inline-flex;align-items:center;justify-content:center;padding:0 5px}
+
+.agenda-card{
+  overflow:hidden;
+  border:1px solid var(--hairline)!important;
+  box-shadow:var(--shadow-soft)!important;
+}
+.agenda-head{padding:13px 14px 11px!important}
+.agenda-list{padding:0 10px 10px;margin-top:2px!important}
+.agenda-item{
+  min-height:51px!important;
+  border:1px solid color-mix(in srgb,var(--line) 70%,transparent);
+  background:var(--surface-soft)!important;
+  transition:transform .14s ease,background .14s ease;
+}
+.agenda-item:hover{background:color-mix(in srgb,var(--accent-soft) 35%,var(--surface-soft))!important;transform:translateX(1px)}
+.agenda-dot{box-shadow:0 0 0 4px color-mix(in srgb,currentColor 8%,transparent)}
+
+/* Home tiles — make the two key destinations feel intentional. */
+.home-tiles{gap:9px!important}
+.home-tile{
+  position:relative;overflow:hidden;
+  border:1px solid var(--hairline)!important;
+  background:linear-gradient(145deg,var(--card),color-mix(in srgb,var(--accent-soft) 38%,var(--card)))!important;
+  box-shadow:var(--shadow-soft)!important;
+  transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease!important;
+}
+.home-tile:after{content:"";position:absolute;width:70px;height:70px;border-radius:50%;right:-35px;top:-40px;background:color-mix(in srgb,var(--accent-soft) 55%,transparent);pointer-events:none}
+.home-tile:hover{transform:translateY(-2px)!important;box-shadow:var(--shadow-card)!important;border-color:color-mix(in srgb,var(--accent) 18%,var(--line))!important}
+.home-tile .tile-arrow{position:relative;z-index:1;font-size:20px!important;color:var(--accent)!important}
+.home-tile .tile-icon{position:relative;z-index:1;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 7%,transparent)}
+.home-tile>span:nth-child(2){position:relative;z-index:1}
+
+/* Items — more breathable and more obviously tappable. */
+.search-wrap{
+  height:49px!important;
+  border-radius:16px!important;
+  box-shadow:var(--shadow-soft)!important;
+  background:color-mix(in srgb,var(--card) 96%,var(--accent-soft))!important;
+}
+.search-wrap:focus-within{border-color:color-mix(in srgb,var(--accent) 30%,var(--line))!important;box-shadow:0 0 0 3px var(--focus-strong),var(--shadow-soft)!important}
+.category-strip{padding-bottom:2px}
+.category-chip{min-height:37px!important;padding:7px 11px!important;border-radius:12px!important}
+.category-chip:hover{border-color:color-mix(in srgb,var(--accent) 24%,var(--line))!important}
+.filter-row{gap:7px!important}
+.filter-chip{min-height:32px!important;padding:6px 11px!important}
+.list-head{margin-top:18px!important}
+.item-list{gap:7px!important}
+.item{
+  min-height:62px;
+  border:1px solid var(--hairline)!important;
+  box-shadow:var(--shadow-soft)!important;
+  transition:transform .14s ease,box-shadow .14s ease,border-color .14s ease!important;
+}
+.item:hover{transform:translateY(-1px);box-shadow:var(--shadow-card)!important;border-color:color-mix(in srgb,var(--accent) 12%,var(--line))!important}
+.item-icon{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 7%,transparent)}
+.check-button{transition:background .15s ease,border-color .15s ease,transform .15s ease}
+.check-button:active{transform:scale(.92)}
+.empty{box-shadow:var(--shadow-soft);background:color-mix(in srgb,var(--card) 94%,var(--accent-soft))!important}
+
+/* Money — one visual language, with a strong hero and clean cards. */
+.money-hero{
+  position:relative;overflow:hidden;
+  background:
+    radial-gradient(240px 140px at 100% 0,color-mix(in srgb,var(--hero-accent) 22%,transparent),transparent 70%),
+    linear-gradient(145deg,var(--hero),color-mix(in srgb,var(--hero) 76%,var(--hero-2)))!important;
+  box-shadow:0 14px 32px color-mix(in srgb,var(--hero) 20%,transparent)!important;
+}
+.money-hero:after{content:"";position:absolute;width:180px;height:180px;border-radius:50%;right:-100px;bottom:-120px;border:1px solid color-mix(in srgb,var(--hero-accent) 16%,transparent)}
+.money-small,.money-card{box-shadow:var(--shadow-soft)!important;border-color:var(--hairline)!important}
+.money-small:hover,.money-card:hover{box-shadow:var(--shadow-card)!important}
+.money-small{transition:transform .15s ease,box-shadow .15s ease}
+.money-small:hover{transform:translateY(-1px)}
+.cashflow-card,.income-card,.cost-card{overflow:hidden}
+
+/* Calendar — stronger selected/today states without relying on colour alone. */
+.calendar-toolbar .icon-btn{box-shadow:var(--shadow-soft)!important}
+.calendar-card{box-shadow:var(--shadow-soft)!important;overflow:hidden}
+.calendar-weekdays{padding:11px 9px 7px!important}
+.cal-day{transition:background .14s ease,transform .14s ease,box-shadow .14s ease!important}
+.cal-day:hover{background:var(--surface-soft)!important}
+.cal-day.selected{box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--accent) 27%,transparent)!important}
+.cal-day.today .cal-number{outline:2px solid color-mix(in srgb,var(--accent) 22%,transparent);outline-offset:2px}
+.calendar-event-row{box-shadow:var(--shadow-soft)!important;border-color:var(--hairline)!important}
+.calendar-add{min-height:46px!important;font-weight:800!important;box-shadow:var(--shadow-soft)!important}
+.calendar-add:hover{transform:translateY(-1px);box-shadow:var(--shadow-card)!important}
+
+/* More / Settings — turn utility rows into a coherent settings system. */
+.more-menu,.more-about{box-shadow:var(--shadow-soft)!important;border-color:var(--hairline)!important}
+.more-menu button{transition:background .14s ease,transform .14s ease!important}
+.more-menu button:hover{background:var(--surface-soft)!important}
+.more-menu button:active{transform:scale(.995)}
+.more-about{background:linear-gradient(145deg,var(--card),color-mix(in srgb,var(--accent-soft) 30%,var(--card)))!important}
+.setting-row{
+  border-color:var(--hairline)!important;
+  background:color-mix(in srgb,var(--card) 96%,var(--accent-soft))!important;
+  border-radius:16px!important;
+  margin-bottom:8px!important;
+  box-shadow:0 2px 9px color-mix(in srgb,var(--text) 3%,transparent)!important;
+}
+.settings-info-stack{margin-top:14px!important;gap:9px!important}
+.settings-info-row{box-shadow:0 2px 9px color-mix(in srgb,var(--text) 3%,transparent);min-height:64px!important}
+.settings-info-row:hover{transform:translateY(-1px);box-shadow:var(--shadow-soft)!important}
+
+/* Modals — more like a native sheet. */
+.modal-backdrop{background:rgba(8,14,12,.48)!important;backdrop-filter:blur(8px)!important;-webkit-backdrop-filter:blur(8px)!important}
+.modal{
+  border:1px solid color-mix(in srgb,var(--line) 70%,white)!important;
+  box-shadow:0 -12px 42px rgba(0,0,0,.12)!important;
+  padding:18px 17px calc(28px + env(safe-area-inset-bottom))!important;
+}
+.modal:before{content:"";display:block;width:38px;height:4px;border-radius:99px;background:color-mix(in srgb,var(--muted) 24%,transparent);margin:-5px auto 15px}
+.modal-header{margin-bottom:15px!important}
+.close{box-shadow:0 2px 8px color-mix(in srgb,var(--text) 6%,transparent);transition:transform .14s ease,background .14s ease!important}
+.close:active{transform:scale(.92)}
+.primary,.secondary,.danger-btn{min-height:46px!important;border-radius:13px!important}
+.primary{box-shadow:var(--shadow-float)!important}
+.field input,.field select,.field textarea{min-height:46px;border-color:var(--hairline)!important;background:color-mix(in srgb,var(--card) 96%,var(--accent-soft))!important}
+
+/* Bottom navigation — floating glass, stronger separation from content. */
+.bottom-nav{
+  height:79px!important;
+  border-top:1px solid color-mix(in srgb,var(--line) 65%,transparent)!important;
+  background:color-mix(in srgb,var(--card) 90%,transparent)!important;
+  backdrop-filter:blur(22px) saturate(145%)!important;
+  -webkit-backdrop-filter:blur(22px) saturate(145%)!important;
+  box-shadow:0 -8px 28px color-mix(in srgb,var(--text) 6%,transparent)!important;
+  padding-top:7px!important;
+}
+.bottom-nav .nav-item{font-size:9.5px!important;font-weight:780!important}
+.bottom-nav .nav-icon{transition:transform .15s ease!important}
+.bottom-nav .nav-item.active .nav-icon{transform:translateY(-1px)}
+.bottom-nav .nav-add{
+  width:52px!important;height:52px!important;border-radius:17px!important;
+  box-shadow:0 12px 26px color-mix(in srgb,var(--accent) 28%,transparent),inset 0 1px 0 rgba(255,255,255,.35)!important;
+  transition:transform .15s ease,box-shadow .15s ease!important;
+}
+.bottom-nav .nav-add:active{transform:scale(.93)!important}
+
+/* Toasts / transient feedback should look deliberate. */
+.toast{
+  border:1px solid color-mix(in srgb,var(--line) 55%,transparent)!important;
+  box-shadow:0 12px 30px rgba(0,0,0,.15)!important;
+  backdrop-filter:blur(14px)!important;-webkit-backdrop-filter:blur(14px)!important;
+}
+
+/* Legal copy — easy to scan on a phone. */
+.legal-copy{gap:15px!important}
+.legal-section{padding:0!important}
+.legal-section h4{font-size:13px!important;letter-spacing:-.01em}
+.legal-section p{font-size:11.5px!important;line-height:1.62!important}
+.legal-intro{box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 4%,transparent)}
+
+/* Responsive cleanup */
+@media(min-width:600px){
+  .app-shell{max-width:780px!important;box-shadow:0 0 60px color-mix(in srgb,var(--text) 4%,transparent)}
+  .topbar{padding-left:22px!important;padding-right:22px!important}
+  .hero-card,.stats-grid,.search-wrap,.category-strip,.filter-row,.list-head,.item-list,.money-hero,.money-detail-grid,.calendar-toolbar,.calendar-card,.calendar-day-head,.calendar-day-list,.calendar-add,.home-tiles{margin-left:22px!important;margin-right:22px!important}
+  .home-section-head{padding-left:22px!important;padding-right:22px!important}
+}
+@media(max-width:430px){
+  .topbar{padding-top:13px!important}
+  .brand-lockup .brand-mark{width:36px!important;height:36px!important;border-radius:11px!important}
+  .brand-lockup h1{font-size:21px!important}
+  .hero-card{margin-top:4px!important;padding:17px!important}
+  .compact-hero .score-row strong{font-size:27px!important}
+  .stat-card{min-height:86px}
+  .bottom-nav{height:78px!important}
+}
+@media(max-width:360px){
+  .hero-card{padding:15px!important}
+  .stats-grid{gap:6px!important}
+  .stat-card{padding-left:4px!important;padding-right:4px!important}
+  .category-chip{padding-left:9px!important;padding-right:9px!important}
+  .bottom-nav .nav-add{width:49px!important;height:49px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*:before,*:after{scroll-behavior:auto!important;animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}
+}

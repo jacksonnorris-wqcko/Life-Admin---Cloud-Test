@@ -1,12 +1,12 @@
-# Life Admin — Family Beta V12.1.11
+# Life Admin — V0.0.1 Beta — Friends & Family
 
-Visual polish release.
+Major visual and usability polish release.
 
-- Home Screen / PWA icon is permanently monochrome black and white.
-- In-app Life Admin brand marks use the selected theme colour.
-- Account/auth brand mark follows the selected theme.
-- Theme-aware in-app branding does not alter the installed Home Screen icon.
-- Existing authentication, cloud sync and local data architecture retained.
+- Refined premium visual system across Home, Items, Money, Calendar, More and Settings.
+- Improved spacing, hierarchy, contrast, touch states, focus states and responsive behaviour.
+- Added stronger but restrained theme personality and depth.
+- Improved modal/sheet presentation and mobile safe-area handling.
+- Preserved the monochrome installed Home Screen icon and theme-aware in-app branding.
+- Existing authentication, cloud sync, local data and beta/legal functionality retained.
 
-
-Icon architecture: the installed/home-screen PWA icon is permanently monochrome; in-app Life Admin branding uses the selected theme icon.
+This is the Friends & Family beta release (V0.0.1).
