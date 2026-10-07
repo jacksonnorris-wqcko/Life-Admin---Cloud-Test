@@ -1,4 +1,4 @@
-# Life Admin V10.3 Alpha
+# Life Admin V10.4 Cloud Test Diagnostic
 
 # Life Admin V9.3 Alpha
 
@@ -38,7 +38,7 @@ V8.4.2 changes: redesigned the home status card to remove the misleading percent
 - Version display is V9.6 Alpha.
 
 
-## V10.3
+## V10.2
 - Added a real local Document Vault using IndexedDB for persistent photos and files.
 - Added document categories: Bills, Receipts, Insurance, Warranties, Personal and Other.
 - Added multi-file upload, optional item linking, image/PDF preview, open-file support and delete.
@@ -46,11 +46,11 @@ V8.4.2 changes: redesigned the home status card to remove the misleading percent
 - JSON backups continue to cover Life Admin data; document files remain local to the device for now.
 
 
-## V10.3 — Linked Document Relationships
+## V10.2 — Linked Document Relationships
 Documents in the vault can now be linked to Life Admin items as a true two-way relationship. Linked vault documents appear in an item's Attachments section, can be opened from the item, and can be unlinked without deleting the document. The Attach action now opens the document picker, with an option to add a new document directly linked to the current item.
 
 
-V10.3 visual polish: cleaner calendar presentation, refined interactive states, theme-aware subtle shadows, and the saved user name is shown only on the Home header (not Calendar/Items/Money/More).
+V10.2 visual polish: cleaner calendar presentation, refined interactive states, theme-aware subtle shadows, and the saved user name is shown only on the Home header (not Calendar/Items/Money/More).
 
 
 ## V10 Cloud Lab Baseline
@@ -66,7 +66,9 @@ This is a copy of the polished local-first Life Admin build prepared as the base
 - Local V9.9/V10 data storage key remains unchanged.
 
 
-## V10.3 Cloud diagnostic
-- Expanded Supabase Auth error reporting with code, status and cause.
-- Added a direct Auth signup diagnostic when the browser reports a generic network/Load failed error.
-- Test Connection now checks the Supabase Auth endpoint directly.
+## V10.4 — Cloud Auth diagnostic
+- Keeps the Supabase JS client for normal auth/database operations.
+- Uses the Auth settings endpoint for a direct connectivity diagnostic.
+- Shows structured Auth/network error details instead of only “Load failed”.
+- Adds a narrow REST signup fallback when Safari reports a network TypeError from the SDK.
+- No database schema or RLS changes.
