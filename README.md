@@ -30,9 +30,16 @@ Signing out clears this device's local Life Admin items, calendar events, local 
 - Sync saves the current device snapshot first, then reads it back and refreshes the local workspace.
 - Shows the last successful sync time.
 
-### V11.3 Alpha Prep — sync status
+### V11.4 Alpha Prep — sync status
 - Added a home-screen cloud status card.
 - Shows `Up to date` with the last successful sync time.
 - Shows `Changes not synced` whenever local data changes after a successful sync.
 - Tapping the card runs Sync Now when connected, or opens Cloud Connect when not connected.
 - Cloud pulls are marked clean so restored data does not immediately appear as unsynced.
+
+
+### V11.4 Alpha Prep
+- Explicit sign-in always reconciles with the cloud snapshot first when there are no local unsynced changes.
+- Logout/login can no longer rely on a stale local sync timestamp.
+- Sync now pulls the current cloud snapshot whenever the device has no unsynced local changes.
+- If local edits and newer cloud edits both exist, the app pulls the newer cloud copy instead of silently overwriting it.

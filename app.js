@@ -1,6 +1,6 @@
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
-const APP_VERSION="11.3";
+const APP_VERSION="11.4";
 const APP_CHANNEL="Cloud Test";
 // ---------------- CLOUD LAB / SUPABASE ----------------
 // Browser-safe Supabase publishable key. Database access is protected by RLS.
@@ -165,13 +165,12 @@ function openCloudAuth(){
       const {data,error}=await cloudClient.auth.signInWithPassword({email:email.value.trim(),password:password.value});
       if(error){showCloudError("Sign in",error);return}
       cloudUser=data.user;
-      // A fresh sign-in on a device must retrieve the existing cloud snapshot
-      // before deciding that the local device has changes to upload. This is
-      // especially important after signing out, because sign-out clears the
-      // local workspace and therefore must never cause an empty snapshot to
-      // overwrite the cloud copy on the next login.
-      const hasLastSync=!!localStorage.getItem("lifeAdminLastCloudSync");
-      if(!hasLastSync){
+      // Every explicit sign-in now reconciles with the cloud first. This makes
+      // logout -> login deterministic and prevents a stale local timestamp
+      // from making the device appear up to date when another device has
+      // already written newer data. Never push local data automatically here.
+      const dirty=localStorage.getItem("lifeAdminCloudDirty")==="1";
+      if(!dirty){
         try{
           const cloud=await cloudReadSnapshot();
           applyCloudSnapshot(cloud.snapshot);
@@ -182,12 +181,14 @@ function openCloudAuth(){
           return;
         }catch(syncErr){
           // No snapshot yet means this is a genuinely new cloud account.
-          // Keep the local workspace and let the normal sync flow upload it.
+          // Keep the local workspace and mark it for the first manual sync.
           console.info("No existing cloud snapshot on sign-in",syncErr);
           localStorage.setItem("lifeAdminCloudDirty","1");
         }
+      }else{
+        toast("Connected — local changes are waiting to sync");
       }
-      closeModal();openSettings();toast("Connected to cloud");
+      closeModal();openSettings();refreshCloudSettings();
     }catch(err){showCloudError("Sign in",err)}
   };
   $("#cloudTest").onclick=async()=>{
@@ -290,43 +291,44 @@ async function cloudSync(){
   try{
     const dirty=localStorage.getItem("lifeAdminCloudDirty")==="1";
     const lastSync=localStorage.getItem("lifeAdminLastCloudSync");
-
-    // IMPORTANT: Sync Now must not blindly push this device over a newer
-    // cloud snapshot. That made PC -> phone sync impossible because the
-    // phone would immediately overwrite the PC's newer snapshot.
     const cloud=await cloudReadSnapshot();
     const cloudTime=cloud.updatedAt?Date.parse(cloud.updatedAt):NaN;
     const localTime=lastSync?Date.parse(lastSync):NaN;
 
-    if(!dirty && Number.isFinite(cloudTime) && (!Number.isFinite(localTime) || cloudTime>localTime+1000)){
-      toast("Syncing… downloading the latest cloud changes");
+    // If this device has no unsynced local edits, cloud is authoritative.
+    // This is what makes a second device reliably pull the latest snapshot.
+    if(!dirty){
+      toast("Syncing… checking the latest cloud data");
       applyCloudSnapshot(cloud.snapshot);
       localStorage.setItem("lifeAdminLastCloudSync",cloud.updatedAt||new Date().toISOString());
       localStorage.removeItem("lifeAdminCloudDirty");
       render();
-      toast("✓ Latest cloud changes loaded");
+      toast("✓ Latest cloud data loaded");
       refreshCloudSettings();
       return;
     }
 
-    if(dirty){
-      toast("Syncing… saving your latest changes");
-      await cloudWriteSnapshot();
-      const refreshed=await cloudReadSnapshot();
-      applyCloudSnapshot(refreshed.snapshot);
-      localStorage.setItem("lifeAdminLastCloudSync",refreshed.updatedAt||new Date().toISOString());
+    // Local edits exist. If the cloud changed since this device's last sync,
+    // do NOT overwrite it. Pull the cloud copy instead and require the user
+    // to re-apply/re-enter local edits, avoiding silent data loss.
+    if(Number.isFinite(cloudTime) && Number.isFinite(localTime) && cloudTime>localTime){
+      applyCloudSnapshot(cloud.snapshot);
+      localStorage.setItem("lifeAdminLastCloudSync",cloud.updatedAt||new Date().toISOString());
       localStorage.removeItem("lifeAdminCloudDirty");
       render();
-      toast("✓ Changes saved and synced");
+      toast("✓ Cloud had newer changes — latest version loaded");
       refreshCloudSettings();
       return;
     }
 
-    // Nothing newer in either direction. Still refresh the timestamp/status.
-    localStorage.setItem("lifeAdminLastCloudSync",cloud.updatedAt||new Date().toISOString());
+    toast("Syncing… saving your latest changes");
+    await cloudWriteSnapshot();
+    const refreshed=await cloudReadSnapshot();
+    applyCloudSnapshot(refreshed.snapshot);
+    localStorage.setItem("lifeAdminLastCloudSync",refreshed.updatedAt||new Date().toISOString());
     localStorage.removeItem("lifeAdminCloudDirty");
     render();
-    toast("✓ Everything is up to date");
+    toast("✓ Changes saved and synced");
     refreshCloudSettings();
   }catch(err){
     console.error("Cloud sync failed",err);
