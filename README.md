@@ -1,12 +1,9 @@
-# Life Admin — V0.0.1 Beta — Friends & Family
+# Life Admin V0.0.1 — Friends & Family Beta
+## Mobile sign-in icon hotfix
 
-Major visual and usability polish release.
+This patch fixes the broken/question-mark icon shown in the Sign in / Create account modal on mobile.
 
-- Refined premium visual system across Home, Items, Money, Calendar, More and Settings.
-- Improved spacing, hierarchy, contrast, touch states, focus states and responsive behaviour.
-- Added stronger but restrained theme personality and depth.
-- Improved modal/sheet presentation and mobile safe-area handling.
-- Preserved the monochrome installed Home Screen icon and theme-aware in-app branding.
-- Existing authentication, cloud sync, local data and beta/legal functionality retained.
+### Changed file
+- `app.js`
 
-This is the Friends & Family beta release (V0.0.1).
+No icons, manifests, images, or unchanged files are included. The auth modal now uses the same inline theme-aware SVG branding system as the rest of the app, avoiding the missing nested image asset.

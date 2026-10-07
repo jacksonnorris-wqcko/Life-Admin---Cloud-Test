@@ -96,8 +96,9 @@ function refreshCloudSettings(){
 
 function openCloudAuth(mode="signin"){
   const isSignup=mode==="signup";
+  const authBrandSrc=`data:image/svg+xml;charset=UTF-8,${encodeURIComponent(brandIconSvg(state.settings?.theme||"forest"))}`;
   openModal(`<div class="auth-modal">
-    <div class="auth-brand"><img class="brand-mark" data-brand-icon="192" src="icons/life-admin-forest-192.png" alt="Life Admin"><div><span class="mini-label">LIFE ADMIN</span><strong>Keep your life in sync</strong></div><button type="button" class="close" id="close" aria-label="Close">${icons.close}</button></div>
+    <div class="auth-brand"><img class="brand-mark" data-brand-icon="192" src="${authBrandSrc}" alt="Life Admin" role="img"><div><span class="mini-label">LIFE ADMIN</span><strong>Keep your life in sync</strong></div><button type="button" class="close" id="close" aria-label="Close">${icons.close}</button></div>
     <div class="auth-intro"><h3 id="authTitle">${isSignup?"Create your account":"Welcome back"}</h3><p id="authCopy">${isSignup?"Create an account to keep your Life Admin synced across your devices.":"Sign in to access your Life Admin wherever you use it."}</p></div>
     <div class="auth-switch" role="tablist" aria-label="Account access">
       <button type="button" class="${!isSignup?"active":""}" id="authSignInTab" role="tab" aria-selected="${!isSignup}">Sign in</button>
