@@ -1,6 +1,6 @@
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
-const APP_VERSION="11.5.1";
+const APP_VERSION="11.6.1";
 const APP_CHANNEL="Cloud Test";
 // ---------------- CLOUD LAB / SUPABASE ----------------
 // Browser-safe Supabase publishable key. Database access is protected by RLS.
@@ -137,7 +137,8 @@ function openCloudAuth(){
     if(!validate())return;
     msg.textContent="Creating account…";
     try{
-      const {data,error}=await cloudClient.auth.signUp({email:email.value.trim(),password:password.value});
+      const redirectTo=`${window.location.origin}${window.location.pathname}`;
+      const {data,error}=await cloudClient.auth.signUp({email:email.value.trim(),password:password.value,options:{emailRedirectTo:redirectTo}});
       if(error){showCloudError("Account creation",error);return}
       if(data?.session){
         cloudUser=data.user;closeModal();openSettings();toast("Cloud account created");

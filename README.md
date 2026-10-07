@@ -1,4 +1,4 @@
-# Life Admin V11.0 — Cloud Test
+# Life Admin V11.6.1 — Cloud Test
 
 Cloud Lab build based on V10.4 corrected Supabase configuration.
 
@@ -56,3 +56,9 @@ V11.6 visual correction: restored theme-aware accent surfaces throughout the V11
 
 
 V11.6 Colour & Personality Pass: theme selector changed to a compact dropdown with live swatch; added stronger theme-aware colour accents, gradients, category surfaces, Money/Calendar/Home colour treatments, and theme-driven primary/add controls. Cloud/auth/sync logic unchanged.
+
+
+## V11.6.1
+- Fixed email signup confirmation redirects by explicitly sending the current GitHub Pages app URL as `emailRedirectTo`.
+- Bumped app/cache version to 11.6.1.
+- Cloud sync/database behaviour unchanged.

@@ -1,4 +1,4 @@
-const CACHE_NAME = "life-admin-cloud-test-v11.6";
+const CACHE_NAME = "life-admin-cloud-test-v11.6.1.1";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
