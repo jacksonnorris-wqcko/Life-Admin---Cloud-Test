@@ -1,6 +1,6 @@
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
-const APP_VERSION="12.1.5";
+const APP_VERSION="12.1.6";
 const APP_CHANNEL="Beta";
 // ---------------- CLOUD SYNC / SUPABASE ----------------
 // Browser-safe Supabase publishable key. Database access is protected by RLS.
@@ -414,7 +414,8 @@ clock:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v
 plusCircle:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 8v8M8 12h8"/></svg>`
 };
 const THEMES={forest:{name:"Forest",meta:"Current Life Admin",color:"#176b4d"},ocean:{name:"Ocean",meta:"Cool and calm",color:"#176a8a"},slate:{name:"Slate",meta:"Clean and modern",color:"#40566f"},sunset:{name:"Sunset",meta:"Warm and friendly",color:"#a64b2a"},lavender:{name:"Lavender",meta:"Soft and personal",color:"#6c4aa1"},berry:{name:"Berry",meta:"Bold and playful",color:"#a43d68"},teal:{name:"Teal",meta:"Fresh and bright",color:"#0f766e"},amber:{name:"Amber",meta:"Warm and energetic",color:"#b7791f"}};
-function applyTheme(theme){const key=THEMES[theme]?theme:"forest";document.documentElement.dataset.theme=key;const meta=document.querySelector('meta[name="theme-color"]');if(meta){const colors=Object.fromEntries(Object.entries(THEMES).map(([k,v])=>[k,v.color]));meta.setAttribute("content",colors[key])}}
+function applyTheme(theme){const key=THEMES[theme]?theme:"forest";document.documentElement.dataset.theme=key;const meta=document.querySelector('meta[name="theme-color"]');if(meta){const colors=Object.fromEntries(Object.entries(THEMES).map(([k,v])=>[k,v.color]));meta.setAttribute("content",colors[key])}updateHomeScreenIcon(key)}
+function updateHomeScreenIcon(theme){const key=THEMES[theme]?theme:"forest";const icon=document.querySelector('link[rel="apple-touch-icon"]');if(icon)icon.href=`icons/life-admin-${key}-apple.png`;const favicon=document.querySelector('link[rel="icon"]');if(favicon)favicon.href=`icons/life-admin-${key}-192.png`}
 let state=loadState();
 let view={category:"all",filter:"attention",search:"",agenda:"today"};
 let calendarView={month:startOfMonth(today()),selected:dateKey(today())};

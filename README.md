@@ -1,4 +1,11 @@
-# Life Admin V12.1.5 — Family Beta
+# Life Admin V12.1.6 — Family Beta
+
+## V12.1.6 — Home screen icon polish
+- Replaced warm cream icon details with clean white details for the Home Screen icon.
+- Added theme-coloured Home Screen icon variants for Forest, Ocean, Slate, Sunset, Lavender, Berry, Teal and Amber.
+- The app updates the Apple touch icon and favicon reference when the Life Admin theme changes.
+- iOS captures the Home Screen icon when the web app is added; changing the theme later does not retroactively recolour an already-installed Home Screen icon.
+
 
 Visual/account refinement build for the Life Admin family beta.
 
