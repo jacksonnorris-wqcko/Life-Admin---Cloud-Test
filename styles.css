@@ -1130,3 +1130,60 @@ button{-webkit-tap-highlight-color:transparent;}
   .account-hero-copy strong{font-size:16px}
   .account-connect-actions{grid-template-columns:1fr 1fr}
 }
+
+
+/* =========================================================
+   V12.1.3 — TOPBAR + LIVE SYNC STATUS
+   Keep the Home greeting unique to Home. Other areas use
+   concise navigation titles. The cloud control carries a
+   quiet, glanceable sync state without adding another card.
+   ========================================================= */
+.topbar .brand-lockup{min-width:0}
+.topbar .brand-lockup>div{min-width:0}
+.topbar .brand-lockup h1{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.header-cloud-icon{display:grid;place-items:center}
+.header-cloud-icon svg{width:20px!important;height:20px!important}
+.account-header-btn{overflow:visible!important}
+.header-status-dot{
+  right:5px!important;top:5px!important;
+  width:9px!important;height:9px!important;
+  border:2px solid var(--card)!important;
+  box-shadow:0 1px 4px rgba(15,23,42,.12);
+  transition:background .18s ease,box-shadow .18s ease,transform .18s ease;
+}
+.header-status-dot.connected{
+  background:#20a36a!important;
+  box-shadow:0 0 0 3px color-mix(in srgb,#20a36a 13%,transparent),0 1px 4px rgba(15,23,42,.10);
+}
+.header-status-dot.dirty{
+  background:#d98a24!important;
+  box-shadow:0 0 0 3px color-mix(in srgb,#d98a24 15%,transparent),0 1px 4px rgba(15,23,42,.10);
+  animation:syncAttention 1.8s ease-in-out infinite;
+}
+.header-status-dot.syncing{
+  background:#4d8fd6!important;
+  box-shadow:0 0 0 3px color-mix(in srgb,#4d8fd6 14%,transparent),0 1px 4px rgba(15,23,42,.10);
+  animation:syncPulse .9s ease-in-out infinite alternate;
+}
+.header-status-dot.offline{background:#aab2bc!important}
+.account-header-btn.sync-dirty .header-cloud-icon svg{animation:cloudNudge 1.8s ease-in-out infinite}
+.account-header-btn.syncing .header-cloud-icon svg{animation:cloudSpin 1.2s linear infinite}
+.account-header-btn.sync-connected .header-cloud-icon{color:var(--accent)!important}
+.account-header-btn.sync-dirty .header-cloud-icon{color:#c27718!important}
+.account-header-btn.sync-offline .header-cloud-icon{color:var(--muted)!important}
+.account-header-btn.syncing .header-cloud-icon{color:#4d8fd6!important}
+@keyframes syncAttention{0%,100%{transform:scale(.9)}50%{transform:scale(1.12)}}
+@keyframes syncPulse{from{transform:scale(.9);opacity:.7}to{transform:scale(1.15);opacity:1}}
+@keyframes cloudNudge{0%,100%{transform:translateY(0)}50%{transform:translateY(-1px)}}
+@keyframes cloudSpin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){
+  .header-status-dot.dirty,.header-status-dot.syncing,.account-header-btn.sync-dirty .header-cloud-icon svg,.account-header-btn.syncing .header-cloud-icon svg{animation:none!important}
+}
+@media(max-width:430px){
+  .topbar{padding-top:16px;padding-bottom:14px}
+  .topbar .brand-mark{width:38px;height:38px;border-radius:11px}
+  .topbar .brand-lockup{gap:10px}
+  .brand-lockup h1{font-size:23px!important}
+  .topbar .header-actions{gap:6px}
+  .topbar .icon-btn{width:40px;height:40px}
+}

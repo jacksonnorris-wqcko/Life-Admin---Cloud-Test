@@ -1,6 +1,6 @@
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
-const APP_VERSION="12.1.2";
+const APP_VERSION="12.1.3";
 const APP_CHANNEL="Beta";
 // ---------------- CLOUD SYNC / SUPABASE ----------------
 // Browser-safe Supabase publishable key. Database access is protected by RLS.
@@ -51,34 +51,46 @@ function cloudSafeItem(item){
 
 function refreshCloudSettings(){
   const status=$("#cloudStatus"), actions=$("#cloudActions");
-  const headerDot=$("#headerStatusDot"), accountDot=$("#accountStatusDot"), syncDesc=$("#accountSyncDescription");
-  if(!status||!actions)return;
+  const headerDot=$("#headerStatusDot"), headerBtn=$("#accountBtn"), accountDot=$("#accountStatusDot"), syncDesc=$("#accountSyncDescription");
   const connected=!!cloudUser;
   const dirty=localStorage.getItem("lifeAdminCloudDirty")==="1";
   const last=localStorage.getItem("lifeAdminLastCloudSync");
+  const syncState=cloudBusy?"syncing":!connected?"offline":dirty?"dirty":"connected";
   [headerDot,accountDot].forEach(dot=>{
     if(!dot)return;
-    dot.classList.toggle("connected",connected&&!dirty);
-    dot.classList.toggle("dirty",connected&&dirty);
-    dot.classList.toggle("offline",!connected);
+    dot.classList.toggle("connected",syncState==="connected");
+    dot.classList.toggle("dirty",syncState==="dirty");
+    dot.classList.toggle("offline",syncState==="offline");
+    dot.classList.toggle("syncing",syncState==="syncing");
   });
-  if(connected){
-    status.textContent=dirty?"Changes not synced":"Up to date";
-    if(syncDesc){
-      syncDesc.textContent=dirty
-        ?"You have changes on this device waiting to be synced to your other devices."
-        :(last?`Everything is synced. Last synced ${new Date(last).toLocaleString([], {dateStyle:"medium",timeStyle:"short"})}.`:"Your account is ready to sync across devices.");
+  if(headerBtn){
+    headerBtn.classList.toggle("sync-connected",syncState==="connected");
+    headerBtn.classList.toggle("sync-dirty",syncState==="dirty");
+    headerBtn.classList.toggle("sync-offline",syncState==="offline");
+    headerBtn.classList.toggle("syncing",syncState==="syncing");
+    const label=syncState==="syncing"?"Syncing your Life Admin":syncState==="dirty"?"Changes waiting to sync":syncState==="connected"?"Life Admin is synced":"Account and sync";
+    headerBtn.setAttribute("aria-label",label);
+    headerBtn.setAttribute("title",label);
+  }
+  if(status&&actions){
+    if(connected){
+      status.textContent=dirty?"Changes not synced":"Up to date";
+      if(syncDesc){
+        syncDesc.textContent=dirty
+          ?"You have changes on this device waiting to be synced to your other devices."
+          :(last?`Everything is synced. Last synced ${new Date(last).toLocaleString([], {dateStyle:"medium",timeStyle:"short"})}.`:"Your account is ready to sync across devices.");
+      }
+      actions.innerHTML=`<button type="button" class="primary" id="cloudSync">${icons.cloud} ${dirty?"Sync changes":"Sync now"}</button>
+        <button type="button" class="text-btn" id="cloudLogout">Sign out</button>`;
+      $("#cloudSync").onclick=cloudSync;
+      $("#cloudLogout").onclick=cloudLogout;
+    }else{
+      status.textContent="Not connected";
+      if(syncDesc)syncDesc.textContent="Create an account or sign in to keep your items and calendar available across your devices.";
+      actions.innerHTML=`<div class="account-connect-actions"><button type="button" class="primary" id="cloudCreate">Create account</button><button type="button" class="secondary" id="cloudSignIn">Sign in</button></div>`;
+      $("#cloudCreate").onclick=()=>openCloudAuth("signup");
+      $("#cloudSignIn").onclick=()=>openCloudAuth("signin");
     }
-    actions.innerHTML=`<button type="button" class="primary" id="cloudSync">${icons.cloud} ${dirty?"Sync changes":"Sync now"}</button>
-      <button type="button" class="text-btn" id="cloudLogout">Sign out</button>`;
-    $("#cloudSync").onclick=cloudSync;
-    $("#cloudLogout").onclick=cloudLogout;
-  }else{
-    status.textContent="Not connected";
-    if(syncDesc)syncDesc.textContent="Create an account or sign in to keep your items and calendar available across your devices.";
-    actions.innerHTML=`<div class="account-connect-actions"><button type="button" class="primary" id="cloudCreate">Create account</button><button type="button" class="secondary" id="cloudSignIn">Sign in</button></div>`;
-    $("#cloudCreate").onclick=()=>openCloudAuth("signup");
-    $("#cloudSignIn").onclick=()=>openCloudAuth("signin");
   }
 }
 
@@ -294,6 +306,7 @@ async function cloudSync(){
   if(!cloudClient||!cloudUser){openCloudAuth();return}
   if(cloudBusy)return;
   cloudBusy=true;
+  refreshCloudSettings();
   try{
     const dirty=localStorage.getItem("lifeAdminCloudDirty")==="1";
     const lastSync=localStorage.getItem("lifeAdminLastCloudSync");
@@ -357,7 +370,7 @@ async function cloudSync(){
     console.error("Cloud sync failed",err);
     toast(`Cloud sync failed: ${err.message||err}`);
     openSettings();
-  }finally{cloudBusy=false}
+  }finally{cloudBusy=false;refreshCloudSettings()}
 }
 
 // Compatibility wrappers for older local state; the beta exposes one simple Sync action.
@@ -445,7 +458,18 @@ function normalizeIncomingItems(){
   if(additions.length){state.items.push(...additions);changed=true}
   return changed;
 }
-function updateGreeting(){const el=$("#pageTitle");if(!el)return;const h=new Date().getHours();el.firstChild.nodeValue=h<12?"Good morning":"Good afternoon"}
+function updateHeader(){
+  const tab=document.querySelector(".nav-item.active")?.dataset.tab||"home";
+  const titleEl=$("#pageTitle"), eyebrowEl=$("#tabEyebrow"), nameEl=$("#userName");
+  if(!titleEl)return;
+  const titles={home:"",items:"Your items",calendar:"Calendar",money:"Money centre",more:"More"};
+  const eyebrows={home:"LIFE ADMIN",items:"ITEMS",calendar:"CALENDAR",money:"MONEY",more:"MORE"};
+  const h=new Date().getHours();
+  const greeting=h<12?"Good morning":h<18?"Good afternoon":"Good evening";
+  titleEl.firstChild.nodeValue=tab==="home"?greeting:(titles[tab]||"Life Admin");
+  if(nameEl)nameEl.textContent=tab==="home"&&state.name?`, ${esc(state.name)}`:"";
+  if(eyebrowEl)eyebrowEl.textContent=eyebrows[tab]||"LIFE ADMIN";
+}
 function status(i){if(i.completed)return"complete";const d=daysUntil(i.due);if(i.moneyType==="income"&&d<=0)return"complete";return d<0?"overdue":d<=SOON_DAYS?"soon":""}
 function filteredItems(){
   let arr=state.items.filter(i=>view.category==="all"||i.category===view.category);
@@ -559,9 +583,7 @@ function switchTab(tab,filter=null){
   const target=tab;
   $$('[data-tab-panel]').forEach(el=>el.hidden=el.dataset.tabPanel!==target);
   $$('.nav-item').forEach(btn=>btn.classList.toggle('active',btn.dataset.tab===tab));
-  const titles={home:"Good morning",items:"Your items",calendar:"Calendar",money:"Money centre",more:"More"};
-  if($('#tabEyebrow'))$('#tabEyebrow').textContent=tab==="home"?"LIFE ADMIN":tab.toUpperCase();
-  if($('#pageTitle'))$('#pageTitle').firstChild.textContent=titles[tab]||"Life Admin";
+  updateHeader();
   if(tab==='home'){view.filter='attention';view.category='all';view.search='';if($('#searchInput'))$('#searchInput').value='';render();}
   if(tab==='items'){view.filter=filter||'all';view.category='all';view.search='';if($('#searchInput'))$('#searchInput').value='';render();}
   if(tab==='calendar'){view.filter='all';renderCalendar();}
@@ -618,9 +640,8 @@ function bindCalendarForm(existing){$("#close").onclick=closeModal;$("#cancel").
 function render(){
   const incomingChanged=normalizeIncomingItems();
   if(incomingChanged)localStorage.setItem(STORE,JSON.stringify(state));
-  const activeTab=document.querySelector(".nav-item.active")?.dataset.tab||"home";
-  $("#userName").textContent=activeTab==="home"&&state.name?", "+esc(state.name):"";
-  updateGreeting();
+  updateHeader();
+  refreshCloudSettings();
   const active=state.items.filter(i=>!i.completed&&i.moneyType!=="income");
   const activeMoney=state.items.filter(i=>!i.completed);
   const overdue=active.filter(i=>daysUntil(i.due)<0);
@@ -916,5 +937,5 @@ async function registerAppUpdater(){
     console.warn("Life Admin updater unavailable",error);
   }
 }
-function boot(){applyTheme(state.settings?.theme||"forest");installIcons();initTabs();initMobileKeyboardHandling();bindGlobal();render();updateGreeting();setInterval(updateGreeting,60000);registerAppUpdater();cloudInit()}
+function boot(){applyTheme(state.settings?.theme||"forest");installIcons();initTabs();initMobileKeyboardHandling();bindGlobal();render();setInterval(updateHeader,60000);registerAppUpdater();cloudInit()}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot,{once:true});else boot();
