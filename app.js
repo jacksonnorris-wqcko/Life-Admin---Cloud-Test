@@ -1,6 +1,6 @@
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
-const APP_VERSION="12.1.10";
+const APP_VERSION="12.1.11";
 const APP_CHANNEL="Beta";
 // ---------------- CLOUD SYNC / SUPABASE ----------------
 // Browser-safe Supabase publishable key. Database access is protected by RLS.
@@ -786,6 +786,10 @@ function openSettings(){
     <div class="setting-row" style="display:block"><div><b>Appearance</b><small>Choose a colour scheme for Life Admin</small></div><div class="theme-picker"><span class="theme-swatch" id="themeSwatch"></span><select id="themeSelect" aria-label="Life Admin theme">${themeOptions}</select></div><div class="appearance-note">Your choice is saved on this device and applies instantly.</div></div>
     <div class="setting-row"><div><b>Backup</b><small>Export your data or restore a previous backup</small></div><div><button type="button" class="text-btn" id="export">Export</button> <button type="button" class="text-btn" id="import">Import</button></div></div>
     <div class="setting-row"><div><b>Data</b><small>${state.items.length} item${state.items.length===1?"":"s"} stored locally</small></div><button type="button" class="text-btn" id="clearData">Clear all</button></div>
+    <div class="settings-info-stack">
+      <button type="button" class="settings-info-row" id="termsBtn"><span><b>Terms & Conditions</b><small>How Life Admin is provided, your data and important limitations</small></span><span class="settings-info-arrow">›</span></button>
+      <a class="settings-info-row" href="https://forms.gle/SDfdino4nXWToxYv5" target="_blank" rel="noopener noreferrer"><span><b>Send feedback & recommendations</b><small>Tell us what you like, what needs fixing and what you'd like to see next</small></span><span class="settings-info-arrow">↗</span></a>
+    </div>
     <p style="font-size:11px;color:var(--muted);margin-top:18px">Life Admin V${APP_VERSION} · ${APP_CHANNEL}</p>`);
   $("#close").onclick=closeModal;
   const themeSelect=$("#themeSelect"); if(themeSelect){themeSelect.onchange=()=>{state.settings.theme=themeSelect.value;applyTheme(state.settings.theme);save();openSettings()};}
@@ -794,6 +798,26 @@ function openSettings(){
   $("#export").onclick=exportData;
   $("#import").onclick=()=>{$("#fileInput").accept=".json,application/json";$("#fileInput").onchange=importData;$("#fileInput").click()};
   $("#clearData").onclick=()=>{if(confirm("Delete every Life Admin item and document? This cannot be undone.")){const theme=state.settings.theme||"forest";state={name:state.name,items:[],events:[],documents:[],settings:{notifications:false,theme}};idbClearFiles();save();closeModal()}};
+  $("#termsBtn").onclick=openTerms;
+}
+function openTerms(){
+  openModal(`<div class="modal-header"><div><span class="mini-label">LIFE ADMIN</span><h3>Terms & Conditions</h3></div><button type="button" class="close" id="close">${icons.close}</button></div>
+    <div class="legal-intro"><strong>Life Admin — Family Beta</strong><span>Last updated 8 October 2026</span></div>
+    <div class="legal-copy">
+      <section class="legal-section"><h4>1. About Life Admin</h4><p>Life Admin is a personal organisation and planning app designed to help you keep track of bills, tasks, reminders, calendar events, money information and other everyday administration. The app is currently provided as a beta service and features may change, be added, or be removed as development continues.</p></section>
+      <section class="legal-section"><h4>2. Beta use</h4><p>By using the beta version, you understand that the app is still being tested and may contain bugs, errors, interruptions or incomplete features. You should keep your own backups of important information and should not rely on Life Admin as the sole record of important dates, payments, documents or other critical information.</p></section>
+      <section class="legal-section"><h4>3. Your information</h4><p>You are responsible for the information you enter into Life Admin and for making sure it is accurate. Where cloud sync is enabled, your Life Admin account data may be stored with the cloud service used by the app so it can be synchronised between your devices. During the beta, documents stored in the Document Vault remain on the device rather than being included in the cloud snapshot.</p></section>
+      <section class="legal-section"><h4>4. Privacy</h4><p>Life Admin is designed to keep your information associated with your account and to use it for providing the app's features, including synchronisation where enabled. We do not ask you to enter information that is unnecessary for using the app. You should avoid entering highly sensitive information unless the app specifically requires it.</p><p>Third-party services may be used to provide features such as account authentication, cloud storage and feedback collection. Those services may process information according to their own privacy policies and terms.</p></section>
+      <section class="legal-section"><h4>5. Feedback</h4><p>If you submit feedback, bug reports or recommendations through the feedback form, you understand that the information you provide may be reviewed and used to improve Life Admin. Please do not include passwords, payment card details or other highly sensitive information in feedback submissions.</p></section>
+      <section class="legal-section"><h4>6. No professional advice</h4><p>Life Admin is an organisational tool only. It does not provide financial, legal, tax, medical or other professional advice. Any calculations, reminders, summaries or information shown by the app should be checked independently before you rely on them for an important decision.</p></section>
+      <section class="legal-section"><h4>7. Availability and data</h4><p>We do not guarantee that Life Admin will always be available, error-free, secure, or that information will never be lost or corrupted. Internet access, device storage, browser behaviour, third-party services and other factors can affect availability and synchronisation. You are responsible for maintaining appropriate backups of important information.</p></section>
+      <section class="legal-section"><h4>8. Limitation of liability</h4><p>To the maximum extent permitted by law, the developer is not responsible for indirect, incidental, special or consequential loss arising from your use of, or inability to use, Life Admin, including loss of data, missed reminders, missed payments or business interruption.</p><p>Nothing in these terms is intended to exclude, restrict or modify any right, guarantee, warranty or remedy that cannot lawfully be excluded or limited, including rights that may apply under the Australian Consumer Law.</p></section>
+      <section class="legal-section"><h4>9. Acceptable use</h4><p>You agree not to misuse the app, attempt to interfere with its operation, access another person's account, or use the service in a way that is unlawful or harmful.</p></section>
+      <section class="legal-section"><h4>10. Changes to these terms</h4><p>These terms may be updated as Life Admin develops. The latest version displayed in the app will apply to continued beta use. Material changes may be highlighted in a future release.</p></section>
+      <section class="legal-section"><h4>11. Contact</h4><p>For beta feedback, recommendations and bug reports, use the <a href="https://forms.gle/SDfdino4nXWToxYv5" target="_blank" rel="noopener noreferrer">Life Admin feedback form</a>.</p></section>
+    </div>
+    <div class="legal-footer">These terms are a general beta-use notice and are not a substitute for legal advice.</div>`);
+  $("#close").onclick=closeModal;
 }
 function updateModalViewport(){
   const backdrop=$("#modalBackdrop");
