@@ -1,4 +1,4 @@
-# Life Admin V12.1.4 — Family Beta
+# Life Admin V12.1.5 — Family Beta
 
 Visual/account refinement build for the Life Admin family beta.
 
@@ -10,7 +10,7 @@ Visual/account refinement build for the Life Admin family beta.
 - Version 12.1.2
 
 
-## V12.1.4 — Mobile keyboard / form usability fix
+## V12.1.5 — Mobile keyboard / form usability fix
 - Modal sheets now follow the visible mobile viewport when the software keyboard opens.
 - Focused inputs are automatically scrolled into a usable position.
 - Applied globally to modal forms across the app, not just Account & Sync.
@@ -18,8 +18,14 @@ Visual/account refinement build for the Life Admin family beta.
 - Added mobile viewport handling for iPhone/Safari keyboard resizing.
 
 
-## V12.1.4 — Header and sync status polish
+## V12.1.5 — Header and sync status polish
 - Good morning/afternoon/evening is now shown only on Home. Other tabs use concise page titles.
 - Account/cloud status now has a persistent visual state: synced, changes waiting, syncing, or offline.
 - Cloud button gets a live status badge and accessible status label.
 - No Supabase data model or sync architecture changes.
+
+
+## V12.1.5 — Home agenda and bottom navigation polish
+- Cleaned the Home agenda item typography so title and date are clearly separated.
+- Standardised the active bottom-navigation highlight to a fixed, centred pill so every tab has identical visual spacing.
+- Kept the central add action in its own equal navigation column.
