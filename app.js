@@ -1,6 +1,6 @@
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
-const APP_VERSION="10.5";
+const APP_VERSION="10.6";
 const APP_CHANNEL="Cloud Test";
 // ---------------- CLOUD LAB / SUPABASE ----------------
 // Browser-safe Supabase publishable key. Database access is protected by RLS.
@@ -687,5 +687,15 @@ function bindGlobal(){document.addEventListener("keydown",e=>{if((e.key==="Enter
   const docDelete=e.target.closest("[data-doc-delete]");if(docDelete){deleteDocument(docDelete.dataset.docDelete);return}
   if(e.target.closest("#documentsBtn")){openDocuments();return}
 });$("#searchInput").addEventListener("input",e=>{view.search=e.target.value;$("#clearSearch").classList.toggle("hidden",!view.search);if(view.search)view.filter="all";render()})}
-function boot(){applyTheme(state.settings?.theme||"forest");installIcons();initTabs();bindGlobal();render();updateGreeting();setInterval(updateGreeting,60000);cloudInit()}
+async function registerAppUpdater(){
+  if(!("serviceWorker" in navigator)) return;
+  try{
+    const registration=await navigator.serviceWorker.register("./sw.js",{scope:"./",updateViaCache:"none"});
+    // Ask the browser to check for a fresh worker whenever the app opens.
+    await registration.update();
+  }catch(error){
+    console.warn("Life Admin updater unavailable",error);
+  }
+}
+function boot(){applyTheme(state.settings?.theme||"forest");installIcons();initTabs();bindGlobal();render();updateGreeting();setInterval(updateGreeting,60000);registerAppUpdater();cloudInit()}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot,{once:true});else boot();

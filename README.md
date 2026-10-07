@@ -1,4 +1,4 @@
-# Life Admin V10.5 — Cloud Test
+# Life Admin V10.6 — Cloud Test
 
 Cloud Lab build based on V10.4 corrected Supabase configuration.
 
@@ -8,3 +8,7 @@ Cloud Lab build based on V10.4 corrected Supabase configuration.
 - Backup exports include an `exportDate` timestamp and app version.
 - Supabase URL remains the corrected Cloud Test project URL.
 - Existing authentication, RLS and cloud push/pull behaviour are otherwise unchanged.
+
+
+### V10.6 update handling
+The Cloud Test now uses a network-first service worker for the app shell and checks for a fresh service worker whenever the app opens. This is designed to pick up new GitHub Pages builds automatically without users clearing browser/site data. Offline fallback remains available for previously cached app-shell files.
