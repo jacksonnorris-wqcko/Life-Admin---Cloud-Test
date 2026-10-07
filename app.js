@@ -4,7 +4,7 @@ const APP_VERSION="10.4";
 const APP_CHANNEL="Cloud Test";
 // ---------------- CLOUD LAB / SUPABASE ----------------
 // Browser-safe Supabase publishable key. Database access is protected by RLS.
-const SUPABASE_URL="https://cfpfcwtozxhvqclovupm.supabase.co";
+const SUPABASE_URL="https://cfpfcwtozxhvgcloyupm.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY="sb_publishable_0WEwGiBXkbHCWw7gttNkdQ_xl64Hk1Q";
 const cloudClient=(window.supabase&&window.supabase.createClient)
   ? window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}})
