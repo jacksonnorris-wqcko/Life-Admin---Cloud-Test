@@ -727,3 +727,36 @@ body{background:radial-gradient(circle at 92% 0%,color-mix(in srgb,var(--accent-
 .theme-swatch{width:34px;height:34px;border-radius:11px;background:linear-gradient(145deg,var(--accent),var(--hero-accent));box-shadow:0 4px 10px color-mix(in srgb,var(--accent) 22%,transparent);flex:none}
 .appearance-note{line-height:1.4}
 @media(prefers-reduced-motion:no-preference){.home-tile,.stat-card,.item,.money-small{transition:transform .16s ease,box-shadow .16s ease,background .2s ease}.home-tile:hover,.stat-card:hover{transform:translateY(-1px)}}
+
+/* V11.6.2 — accessibility / contrast correction
+   Keep the richer themed surfaces, but never place dark body text on the dark hero. */
+:root{
+  --hero-text:#ffffff;
+  --hero-muted:rgba(255,255,255,.78);
+  --hero-label:var(--hero-accent);
+  --hero-badge-bg:var(--hero-accent);
+  --hero-badge-text:var(--hero);
+  --selected-text:var(--accent);
+  --selected-bg:var(--accent-soft);
+}
+.hero-card,
+.hero-card .score-row strong{color:var(--hero-text)!important}
+.hero-card .hero-label{color:var(--hero-label)!important;opacity:1!important}
+.hero-card p,
+.compact-hero p{color:var(--hero-muted)!important}
+.hero-card .status-badge{background:var(--hero-badge-bg)!important;color:var(--hero-badge-text)!important;border-color:color-mix(in srgb,var(--hero-accent) 45%,transparent)!important}
+.hero-card .score-row span{color:var(--hero-muted)!important}
+
+/* Keep selected controls readable across every theme. */
+.category-chip.active,.filter-chip.active{background:var(--selected-bg)!important;color:var(--selected-text)!important;border-color:color-mix(in srgb,var(--accent) 24%,var(--line))!important}
+.segmented button.active{color:var(--text)!important;background:var(--card)!important}
+.cal-day.selected{background:var(--selected-bg)!important;box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--accent) 20%,transparent)!important}
+
+/* The top header stays light so the main page title always has strong contrast. */
+.topbar .brand-lockup h1{color:var(--text)!important}
+.topbar .icon-btn{color:var(--text)!important}
+
+/* Theme-aware money hero text. */
+.money-hero{color:var(--hero-text)!important}
+.money-hero .mini-label,.money-hero>p,.money-hero .money-summary small{color:var(--hero-muted)!important}
+.money-hero>strong,.money-hero .money-summary b{color:var(--hero-text)!important}
