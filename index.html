@@ -10,7 +10,7 @@
 <link rel="icon" type="image/png" sizes="192x192" href="life-admin-icon-v9.6-192.png">
 <link rel="apple-touch-icon" href="life-admin-icon-v9.6-apple.png">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="stylesheet" href="styles.css?v=10800">
+<link rel="stylesheet" href="styles.css?v=11100">
 <style>svg{fill:none!important;stroke:currentColor!important;stroke-width:1.8!important;stroke-linecap:round!important;stroke-linejoin:round!important;vector-effect:non-scaling-stroke!important}svg circle,svg rect{fill:none!important}</style>
 </head>
 <body>
@@ -26,6 +26,11 @@
       <div class="hero-top"><div><span class="hero-label">LIFE ADMIN STATUS</span><div class="score-row"><strong id="scoreText">All clear</strong></div></div><div class="status-badge" id="statusBadge" aria-hidden="true">✓</div></div>
       <p id="scoreDetail">Nothing needs your attention right now.</p>
     </section>
+    <button type="button" class="home-sync-card" id="homeSyncCard" aria-label="Cloud sync status">
+      <span class="home-sync-icon" id="homeSyncIcon">☁️</span>
+      <span class="home-sync-copy"><strong id="homeSyncTitle">Cloud not connected</strong><small id="homeSyncDetail">Connect to sync your Life Admin across devices.</small></span>
+      <span class="home-sync-arrow">›</span>
+    </button>
     <section class="stats-grid compact-stats">
       <button type="button" class="stat-card" data-filter="overdue"><span class="stat-icon danger" data-icon="warning"></span><b id="overdueCount">0</b><small>Overdue</small></button>
       <button type="button" class="stat-card" data-filter="soon"><span class="stat-icon warning" data-icon="calendar"></span><b id="soonCount">0</b><small>Due soon</small></button>
@@ -104,6 +109,6 @@
 <input id="fileInput" type="file" accept="image/*,.pdf,.txt,.doc,.docx" hidden>
 <input id="documentInput" type="file" accept="image/*,.pdf,.txt,.doc,.docx,.xls,.xlsx,.csv" multiple hidden>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=11000" defer></script>
+<script src="app.js?v=11100" defer></script>
 </body>
 </html>

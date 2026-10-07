@@ -1,6 +1,6 @@
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
-const APP_VERSION="11.0";
+const APP_VERSION="11.2";
 const APP_CHANNEL="Cloud Test";
 // ---------------- CLOUD LAB / SUPABASE ----------------
 // Browser-safe Supabase publishable key. Database access is protected by RLS.
@@ -57,6 +57,7 @@ async function cloudAuthSettings(){
 }
 let cloudUser=null;
 let cloudBusy=false;
+let suppressCloudDirty=false;
 
 async function cloudInit(){
   if(!cloudClient){
@@ -163,7 +164,9 @@ function openCloudAuth(){
     try{
       const {data,error}=await cloudClient.auth.signInWithPassword({email:email.value.trim(),password:password.value});
       if(error){showCloudError("Sign in",error);return}
-      cloudUser=data.user;closeModal();openSettings();toast("Connected to cloud");
+      cloudUser=data.user;
+      if(!localStorage.getItem("lifeAdminLastCloudSync")) localStorage.setItem("lifeAdminCloudDirty","1");
+      closeModal();openSettings();toast("Connected to cloud");
     }catch(err){showCloudError("Sign in",err)}
   };
   $("#cloudTest").onclick=async()=>{
@@ -191,8 +194,12 @@ async function cloudLogout(){
     const theme=state.settings?.theme||"forest";
     state={name:"",items:[],events:[],documents:[],settings:{notifications:false,theme}};
     localStorage.removeItem(STORE);
+    localStorage.removeItem("lifeAdminCloudDirty");
+    localStorage.removeItem("lifeAdminLastCloudSync");
     await idbClearFiles();
+    suppressCloudDirty=true;
     save();
+    suppressCloudDirty=false;
   }catch(err){
     console.error("Local sign-out cleanup failed",err);
     toast("Signed out, but some local data could not be cleared");
@@ -237,7 +244,7 @@ async function cloudReadSnapshot(){
   const row=data?.[0];
   const snapshot=row?.data&&typeof row.data==="object"?row.data:null;
   if(!snapshot)throw new Error("No cloud snapshot found");
-  return snapshot;
+  return {snapshot,updatedAt:row.updated_at||snapshot.exportDate||null};
 }
 
 function applyCloudSnapshot(snapshot){
@@ -248,7 +255,9 @@ function applyCloudSnapshot(snapshot){
   state.events=Array.isArray(snapshot.events)?snapshot.events:[];
   state.settings={notifications:false,theme:"forest",...(snapshot.settings||{})};
   applyTheme(state.settings.theme);
+  suppressCloudDirty=true;
   save();
+  suppressCloudDirty=false;
   calendarView={month:startOfMonth(today()),selected:dateKey(today())};
   renderCalendar();
 }
@@ -258,16 +267,46 @@ async function cloudSync(){
   if(cloudBusy)return;
   cloudBusy=true;
   try{
-    toast("Syncing… saving your latest changes");
-    // Deliberately save this device's complete workspace first. The cloud is
-    // a single snapshot, so this prevents stale local data being lost.
-    await cloudWriteSnapshot();
-    toast("Syncing… refreshing from cloud");
-    const snapshot=await cloudReadSnapshot();
-    applyCloudSnapshot(snapshot);
-    localStorage.setItem("lifeAdminLastCloudSync",new Date().toISOString());
+    const dirty=localStorage.getItem("lifeAdminCloudDirty")==="1";
+    const lastSync=localStorage.getItem("lifeAdminLastCloudSync");
+
+    // IMPORTANT: Sync Now must not blindly push this device over a newer
+    // cloud snapshot. That made PC -> phone sync impossible because the
+    // phone would immediately overwrite the PC's newer snapshot.
+    const cloud=await cloudReadSnapshot();
+    const cloudTime=cloud.updatedAt?Date.parse(cloud.updatedAt):NaN;
+    const localTime=lastSync?Date.parse(lastSync):NaN;
+
+    if(!dirty && Number.isFinite(cloudTime) && (!Number.isFinite(localTime) || cloudTime>localTime+1000)){
+      toast("Syncing… downloading the latest cloud changes");
+      applyCloudSnapshot(cloud.snapshot);
+      localStorage.setItem("lifeAdminLastCloudSync",cloud.updatedAt||new Date().toISOString());
+      localStorage.removeItem("lifeAdminCloudDirty");
+      render();
+      toast("✓ Latest cloud changes loaded");
+      refreshCloudSettings();
+      return;
+    }
+
+    if(dirty){
+      toast("Syncing… saving your latest changes");
+      await cloudWriteSnapshot();
+      const refreshed=await cloudReadSnapshot();
+      applyCloudSnapshot(refreshed.snapshot);
+      localStorage.setItem("lifeAdminLastCloudSync",refreshed.updatedAt||new Date().toISOString());
+      localStorage.removeItem("lifeAdminCloudDirty");
+      render();
+      toast("✓ Changes saved and synced");
+      refreshCloudSettings();
+      return;
+    }
+
+    // Nothing newer in either direction. Still refresh the timestamp/status.
+    localStorage.setItem("lifeAdminLastCloudSync",cloud.updatedAt||new Date().toISOString());
+    localStorage.removeItem("lifeAdminCloudDirty");
+    render();
     toast("✓ Everything is up to date");
-    openSettings();
+    refreshCloudSettings();
   }catch(err){
     console.error("Cloud sync failed",err);
     toast(`Cloud sync failed: ${err.message||err}`);
@@ -321,7 +360,13 @@ let state=loadState();
 let view={category:"all",filter:"attention",search:"",agenda:"today"};
 let calendarView={month:startOfMonth(today()),selected:dateKey(today())};
 function loadState(){try{const s=JSON.parse(localStorage.getItem(STORE));if(s&&Array.isArray(s.items)){s.settings={notifications:false,theme:"forest",...(s.settings||{})};s.items=s.items.map(i=>({...i,moneyType:i.moneyType||"expense",attachments:i.attachments||[],completed:!!i.completed,pinned:!!i.pinned,priority:i.priority||"normal",seriesId:i.seriesId||null}));s.events=Array.isArray(s.events)?s.events:[];s.documents=Array.isArray(s.documents)?s.documents:[];return s}}catch{}return{name:"",items:[],events:[],documents:[],settings:{notifications:false,theme:"forest"}}}
-function save(){localStorage.setItem(STORE,JSON.stringify(state));render()}
+function save(){
+  localStorage.setItem(STORE,JSON.stringify(state));
+  if(cloudUser && !suppressCloudDirty){
+    localStorage.setItem("lifeAdminCloudDirty","1");
+  }
+  render();
+}
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]))}
 function today(){const d=new Date();d.setHours(0,0,0,0);return d}
 function dateObj(s){return new Date(`${s}T00:00:00`)}
@@ -524,6 +569,32 @@ function eventFormHtml(e={}){const isEdit=!!e.id;return `<div class="modal-heade
 function openCalendarEvent(id){const e=(state.events||[]).find(x=>x.id===id);if(!e)return;openModal(eventFormHtml(e));bindCalendarForm(e)}
 function openCalendarAdd(){openModal(eventFormHtml({date:calendarView.selected||dateKey(today())}));bindCalendarForm()}
 function bindCalendarForm(existing){$("#close").onclick=closeModal;$("#cancel").onclick=closeModal;$("#calendarForm").onsubmit=ev=>{ev.preventDefault();const data={title:$("#eventTitle").value.trim(),type:$("#eventType").value,date:$("#eventDate").value,time:$("#eventTime").value,repeat:$("#eventRepeat").value,notes:$("#eventNotes").value.trim()};if(!data.title||!data.date)return;if(existing)Object.assign(existing,data);else{state.events=state.events||[];state.events.push({id:uid(),...data,createdAt:new Date().toISOString()})}calendarView.month=dateObj(data.date);calendarView.selected=data.date;closeModal();save();toast(existing?"Event updated":"Event added");renderCalendar()};if(existing)$("#deleteEvent").onclick=()=>{if(confirm("Delete this calendar event?")){state.events=state.events.filter(x=>x.id!==existing.id);closeModal();save();renderCalendar();toast("Event deleted")}}}
+function renderHomeSyncStatus(){
+  const card=$("#homeSyncCard"),icon=$("#homeSyncIcon"),title=$("#homeSyncTitle"),detail=$("#homeSyncDetail");
+  if(!card||!icon||!title||!detail)return;
+  const connected=!!cloudUser;
+  const dirty=localStorage.getItem("lifeAdminCloudDirty")==="1";
+  const last=localStorage.getItem("lifeAdminLastCloudSync");
+  card.classList.toggle("sync-dirty",connected&&dirty);
+  card.classList.toggle("sync-ok",connected&&!dirty);
+  card.classList.toggle("sync-offline",!connected);
+  if(!connected){
+    icon.textContent="☁️";
+    title.textContent="Cloud not connected";
+    detail.textContent="Connect to sync your Life Admin across devices.";
+    return;
+  }
+  if(dirty){
+    icon.textContent="🟠";
+    title.textContent="Changes not synced";
+    detail.textContent="Tap to sync your latest changes.";
+    return;
+  }
+  icon.textContent="☁️";
+  title.textContent="Up to date";
+  detail.textContent=last?`Last synced ${new Date(last).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})}`:"Ready to sync";
+}
+
 function render(){
   const incomingChanged=normalizeIncomingItems();
   if(incomingChanged)localStorage.setItem(STORE,JSON.stringify(state));
@@ -553,6 +624,7 @@ function render(){
   const attentionSet=new Set([...overdue,...active.filter(i=>daysUntil(i.due)>=0&&daysUntil(i.due)<=ATTENTION_DAYS)].map(i=>i.id));
   const attentionCount=attentionSet.size;
   const hasItems=state.items.length>0;
+  renderHomeSyncStatus();
   $("#scoreText").textContent=attentionCount?"Needs attention":"All clear";
   $("#scoreDetail").textContent=attentionCount?`${attentionCount} ${attentionCount===1?"item needs":"items need"} your attention · ${overdue.length} overdue · ${active.filter(i=>daysUntil(i.due)>=0&&daysUntil(i.due)<=ATTENTION_DAYS).length} due today`:hasItems?"Nothing needs your attention right now.":"Add something with the + button when you need to.";
   const badge=$("#statusBadge");
@@ -714,6 +786,7 @@ function bindGlobal(){document.addEventListener("keydown",e=>{if((e.key==="Enter
   const homeAll=e.target.closest("#homeViewAll");if(homeAll){switchTab("items");return}
   const homeMoney=e.target.closest("#homeMoney");if(homeMoney){switchTab("money");return}
   const homeIncome=e.target.closest("#homeIncome");if(homeIncome){switchTab("money");return}
+  const homeSync=e.target.closest("#homeSyncCard");if(homeSync){if(cloudUser)cloudSync();else openCloudAuth();return}
   const calDate=e.target.closest("[data-cal-date]");if(calDate){calendarView.selected=calDate.dataset.calDate;const d=dateObj(calendarView.selected);calendarView.month=new Date(d.getFullYear(),d.getMonth(),1);renderCalendar();return}
   const calEvent=e.target.closest("[data-calendar-event]");if(calEvent){openCalendarEvent(calEvent.dataset.calendarEvent);return}
   if(e.target.closest("#calendarPrev")){calendarView.month=new Date(calendarView.month.getFullYear(),calendarView.month.getMonth()-1,1);calendarView.selected=dateKey(calendarView.month);renderCalendar();return}
