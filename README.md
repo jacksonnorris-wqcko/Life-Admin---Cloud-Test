@@ -30,7 +30,7 @@ Signing out clears this device's local Life Admin items, calendar events, local 
 - Sync saves the current device snapshot first, then reads it back and refreshes the local workspace.
 - Shows the last successful sync time.
 
-### V11.4 Alpha Prep — sync status
+### V11.5 Alpha Prep — sync status
 - Added a home-screen cloud status card.
 - Shows `Up to date` with the last successful sync time.
 - Shows `Changes not synced` whenever local data changes after a successful sync.
@@ -43,3 +43,10 @@ Signing out clears this device's local Life Admin items, calendar events, local 
 - Logout/login can no longer rely on a stale local sync timestamp.
 - Sync now pulls the current cloud snapshot whenever the device has no unsynced local changes.
 - If local edits and newer cloud edits both exist, the app pulls the newer cloud copy instead of silently overwriting it.
+
+
+## V11.5 Visual Polish
+- Premium visual refresh built from the stable V11.4 cloud-sync baseline.
+- Cloud/auth/snapshot logic intentionally unchanged.
+- Refined hierarchy, spacing, cards, navigation, typography, status treatments, buttons and mobile safe-area presentation.
+- More restrained brand colour usage and cleaner list/calendar presentation.
