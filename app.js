@@ -1,6 +1,6 @@
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
-const APP_VERSION="10.2";
+const APP_VERSION="10.3";
 const APP_CHANNEL="Cloud Test";
 // ---------------- CLOUD LAB / SUPABASE ----------------
 // Browser-safe Supabase publishable key. Database access is protected by RLS.
@@ -83,7 +83,25 @@ function openCloudAuth(){
   const showCloudError=(action,error)=>{
     console.error(`Cloud ${action} failed`,error);
     const detail=error?.message||String(error||"Unknown error");
-    msg.textContent=`${action} failed: ${detail}`;
+    const code=error?.code||error?.name||"unknown";
+    const status=error?.status||error?.statusCode||"n/a";
+    const cause=error?.cause?.message||error?.cause||"";
+    msg.textContent=`${action} failed: ${detail} | code: ${code} | status: ${status}${cause?` | cause: ${cause}`:""}`;
+  };
+  const directAuthDiagnostic=async(email,password)=>{
+    try{
+      const response=await fetch(`${SUPABASE_URL}/auth/v1/signup`,{
+        method:"POST",
+        headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLISHABLE_KEY},
+        body:JSON.stringify({email,password})
+      });
+      const raw=await response.text();
+      let body=null;
+      try{body=JSON.parse(raw)}catch{}
+      return {ok:response.ok,status:response.status,body,raw};
+    }catch(err){
+      return {networkError:true,error:err};
+    }
   };
   $("#cloudSignup").onclick=async()=>{
     if(!validate())return;
@@ -96,7 +114,20 @@ function openCloudAuth(){
       }else{
         msg.textContent="Account created. Check your email to confirm it, then come back and sign in.";
       }
-    }catch(err){showCloudError("Account creation",err)}
+    }catch(err){
+      showCloudError("Account creation",err);
+      if((err?.message||"").toLowerCase().includes("load failed")||err?.name==="TypeError"){
+        msg.textContent="Account creation hit a browser/network error. Running direct Supabase Auth diagnostic…";
+        const diag=await directAuthDiagnostic(email.value.trim(),password.value);
+        if(diag.networkError){
+          const e=diag.error;
+          msg.textContent=`Account creation failed: browser could not reach Supabase Auth (${e?.message||"network error"}). Check browser/network access to the Supabase project.`;
+        }else{
+          const b=diag.body||{};
+          msg.textContent=`Direct Supabase Auth response: HTTP ${diag.status}${b.code?` | code: ${b.code}`:""}${b.error?` | error: ${b.error}`:""}${b.msg?` | message: ${b.msg}`:""}${b.message?` | message: ${b.message}`:""}`;
+        }
+      }
+    }
   };
   $("#cloudSignin").onclick=async()=>{
     if(!validate())return;
@@ -113,7 +144,9 @@ function openCloudAuth(){
     try{
       const {error}=await cloudClient.auth.getSession();
       if(error)throw error;
-      msg.textContent="Supabase connection is working. You can create the test account now.";
+      const response=await fetch(`${SUPABASE_URL}/auth/v1/settings`,{headers:{apikey:SUPABASE_PUBLISHABLE_KEY}});
+      if(!response.ok)throw new Error(`Supabase Auth endpoint returned HTTP ${response.status}`);
+      msg.textContent="Supabase Auth endpoint is reachable. You can create the test account now.";
     }catch(err){showCloudError("Connection test",err)}
   };
   installIcons();
