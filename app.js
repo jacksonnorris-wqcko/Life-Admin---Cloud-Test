@@ -1,6 +1,6 @@
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
-const APP_VERSION="11.2";
+const APP_VERSION="11.3";
 const APP_CHANNEL="Cloud Test";
 // ---------------- CLOUD LAB / SUPABASE ----------------
 // Browser-safe Supabase publishable key. Database access is protected by RLS.
@@ -165,7 +165,28 @@ function openCloudAuth(){
       const {data,error}=await cloudClient.auth.signInWithPassword({email:email.value.trim(),password:password.value});
       if(error){showCloudError("Sign in",error);return}
       cloudUser=data.user;
-      if(!localStorage.getItem("lifeAdminLastCloudSync")) localStorage.setItem("lifeAdminCloudDirty","1");
+      // A fresh sign-in on a device must retrieve the existing cloud snapshot
+      // before deciding that the local device has changes to upload. This is
+      // especially important after signing out, because sign-out clears the
+      // local workspace and therefore must never cause an empty snapshot to
+      // overwrite the cloud copy on the next login.
+      const hasLastSync=!!localStorage.getItem("lifeAdminLastCloudSync");
+      if(!hasLastSync){
+        try{
+          const cloud=await cloudReadSnapshot();
+          applyCloudSnapshot(cloud.snapshot);
+          localStorage.setItem("lifeAdminLastCloudSync",cloud.updatedAt||new Date().toISOString());
+          localStorage.removeItem("lifeAdminCloudDirty");
+          closeModal();openSettings();render();toast("Connected — latest cloud data loaded");
+          refreshCloudSettings();
+          return;
+        }catch(syncErr){
+          // No snapshot yet means this is a genuinely new cloud account.
+          // Keep the local workspace and let the normal sync flow upload it.
+          console.info("No existing cloud snapshot on sign-in",syncErr);
+          localStorage.setItem("lifeAdminCloudDirty","1");
+        }
+      }
       closeModal();openSettings();toast("Connected to cloud");
     }catch(err){showCloudError("Sign in",err)}
   };

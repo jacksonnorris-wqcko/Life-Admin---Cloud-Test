@@ -30,7 +30,7 @@ Signing out clears this device's local Life Admin items, calendar events, local 
 - Sync saves the current device snapshot first, then reads it back and refreshes the local workspace.
 - Shows the last successful sync time.
 
-### V11.2 Alpha Prep — sync status
+### V11.3 Alpha Prep — sync status
 - Added a home-screen cloud status card.
 - Shows `Up to date` with the last successful sync time.
 - Shows `Changes not synced` whenever local data changes after a successful sync.
