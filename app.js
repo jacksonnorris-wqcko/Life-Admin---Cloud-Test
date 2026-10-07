@@ -1,6 +1,6 @@
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
-const APP_VERSION="12.1.8";
+const APP_VERSION="12.1.9";
 const APP_CHANNEL="Beta";
 // ---------------- CLOUD SYNC / SUPABASE ----------------
 // Browser-safe Supabase publishable key. Database access is protected by RLS.
@@ -415,7 +415,8 @@ plusCircle:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M
 };
 const THEMES={forest:{name:"Forest",meta:"Current Life Admin",color:"#176b4d"},ocean:{name:"Ocean",meta:"Cool and calm",color:"#176a8a"},slate:{name:"Slate",meta:"Clean and modern",color:"#40566f"},sunset:{name:"Sunset",meta:"Warm and friendly",color:"#a64b2a"},lavender:{name:"Lavender",meta:"Soft and personal",color:"#6c4aa1"},berry:{name:"Berry",meta:"Bold and playful",color:"#a43d68"},teal:{name:"Teal",meta:"Fresh and bright",color:"#0f766e"},amber:{name:"Amber",meta:"Warm and energetic",color:"#b7791f"}};
 function applyTheme(theme){const key=THEMES[theme]?theme:"forest";document.documentElement.dataset.theme=key;const meta=document.querySelector('meta[name="theme-color"]');if(meta){const colors=Object.fromEntries(Object.entries(THEMES).map(([k,v])=>[k,v.color]));meta.setAttribute("content",colors[key])}updateInAppBrandIcons(key)}
-function updateInAppBrandIcons(theme){const key=THEMES[theme]?theme:"forest";document.querySelectorAll("[data-brand-icon]").forEach(img=>{const size=img.dataset.brandIcon||"512";const src=`icons/life-admin-${key}-${size}.png?v=${APP_VERSION.replaceAll(".","")}`;const fallback=`icons/life-admin-mono-${size}.png?v=${APP_VERSION.replaceAll(".","")}`;img.onerror=()=>{if(img.dataset.iconFallback!="1"){img.dataset.iconFallback="1";img.src=fallback}};img.dataset.iconFallback="0";if(img.getAttribute("src")!==src)img.setAttribute("src",src)})}
+function brandIconSvg(theme){const key=THEMES[theme]?theme:"forest";const colors={forest:"#176b4d",ocean:"#176a8a",slate:"#40566f",sunset:"#a64b2a",lavender:"#6c4aa1",berry:"#a43d68",teal:"#0f766e",amber:"#b7791f"};const c=colors[key]||colors.forest;return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect x="20" y="20" width="472" height="472" rx="112" fill="${c}"/><rect x="86" y="102" width="330" height="286" rx="38" fill="#111"/><rect x="108" y="76" width="252" height="116" rx="32" fill="#fff"/><rect x="166" y="98" width="216" height="108" rx="30" fill="#f4f5f3"/><path d="M86 210c0-22 18-40 40-40h252c22 0 38 18 38 40v178H86z" fill="#111"/><g fill="#fff"><rect x="170" y="240" width="180" height="20" rx="10"/><rect x="170" y="294" width="142" height="20" rx="10"/><rect x="170" y="348" width="102" height="20" rx="10"/><circle cx="132" cy="250" r="16"/><circle cx="132" cy="304" r="16"/><circle cx="132" cy="358" r="16"/></g></svg>`}
+function updateInAppBrandIcons(theme){const key=THEMES[theme]?theme:"forest";const src=`data:image/svg+xml;charset=UTF-8,${encodeURIComponent(brandIconSvg(key))}`;document.querySelectorAll("[data-brand-icon]").forEach(img=>{img.removeAttribute("onerror");img.src=src;img.alt=img.alt||"Life Admin";img.dataset.brandKey=key})}
 let state=loadState();
 let view={category:"all",filter:"attention",search:"",agenda:"today"};
 let calendarView={month:startOfMonth(today()),selected:dateKey(today())};
