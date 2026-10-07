@@ -1,8 +1,8 @@
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
-const APP_VERSION="12.0.0";
-const APP_CHANNEL="Cloud Test";
-// ---------------- CLOUD LAB / SUPABASE ----------------
+const APP_VERSION="12.1.0";
+const APP_CHANNEL="Beta";
+// ---------------- CLOUD SYNC / SUPABASE ----------------
 // Browser-safe Supabase publishable key. Database access is protected by RLS.
 const SUPABASE_URL="https://cfpfcwtozxhvgcloyupm.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY="sb_publishable_0WEwGiBXkbHCWw7gttNkdQ_xl64Hk1Q";
@@ -21,40 +21,6 @@ function cloudErrorDetail(error){
   return parts.join(" | ")||String(error);
 }
 
-async function cloudAuthRest(path,body){
-  const response=await fetch(`${SUPABASE_URL}/auth/v1/${path}`,{
-    method:"POST",
-    mode:"cors",
-    headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLISHABLE_KEY},
-    body:JSON.stringify(body)
-  });
-  const text=await response.text();
-  let data=null;
-  try{data=text?JSON.parse(text):null}catch{}
-  if(!response.ok){
-    const err=new Error(data?.msg||data?.message||`HTTP ${response.status}`);
-    err.name="SupabaseAuthError";
-    err.status=response.status;
-    err.code=data?.code||data?.error_code||"http_error";
-    throw err;
-  }
-  return data;
-}
-
-async function cloudAuthSettings(){
-  const response=await fetch(`${SUPABASE_URL}/auth/v1/settings?la=${Date.now()}`,{
-    method:"GET",mode:"cors",cache:"no-store",
-    headers:{"apikey":SUPABASE_PUBLISHABLE_KEY}
-  });
-  const text=await response.text();
-  let data=null;
-  try{data=text?JSON.parse(text):null}catch{}
-  if(!response.ok){
-    const err=new Error(data?.msg||data?.message||`HTTP ${response.status}`);
-    err.name="SupabaseSettingsError";err.status=response.status;err.code=data?.code||"http_error";throw err;
-  }
-  return data;
-}
 let cloudUser=null;
 let cloudBusy=false;
 let suppressCloudDirty=false;
@@ -84,11 +50,11 @@ function cloudSafeItem(item){
 }
 
 function cloudStatusText(){
-  if(!cloudClient)return "Cloud connection unavailable";
+  if(!cloudClient)return "Sync unavailable";
   if(cloudUser){
     const last=localStorage.getItem("lifeAdminLastCloudSync");
     const when=last?` · Last synced ${new Date(last).toLocaleString([], {dateStyle:"short",timeStyle:"short"})}`:"";
-    return `Connected as ${esc(cloudUser.email||"signed-in user")}${when}`;
+    return `Synced as ${esc(cloudUser.email||"signed-in user")}${when}`;
   }
   return "Not connected";
 }
@@ -108,110 +74,136 @@ function refreshCloudSettings(){
   }
 }
 
-function openCloudAuth(){
-  openModal(`<div class="modal-header"><h3>Cloud Sync</h3><button type="button" class="close" id="close">${icons.close}</button></div>
-    <p class="cloud-copy">Sign in to your Life Admin Cloud Test account. Sync keeps your Life Admin items and calendar up to date across your devices. Documents remain on each device for now.</p>
-    <div class="form-grid">
-      <div class="field"><label>Email</label><input id="cloudEmail" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com"></div>
-      <div class="field"><label>Password</label><input id="cloudPassword" type="password" autocomplete="current-password" placeholder="At least 6 characters"></div>
+function openCloudAuth(mode="signin"){
+  const isSignup=mode==="signup";
+  openModal(`<div class="auth-modal">
+    <div class="auth-brand"><img src="life-admin-icon-v9.6-192.png" alt=""><div><span class="mini-label">LIFE ADMIN</span><strong>Keep your life in sync</strong></div><button type="button" class="close" id="close" aria-label="Close">${icons.close}</button></div>
+    <div class="auth-intro"><h3 id="authTitle">${isSignup?"Create your account":"Welcome back"}</h3><p id="authCopy">${isSignup?"Create an account to keep your Life Admin synced across your devices.":"Sign in to access your Life Admin wherever you use it."}</p></div>
+    <div class="auth-switch" role="tablist" aria-label="Account access">
+      <button type="button" class="${!isSignup?"active":""}" id="authSignInTab" role="tab" aria-selected="${!isSignup}">Sign in</button>
+      <button type="button" class="${isSignup?"active":""}" id="authSignUpTab" role="tab" aria-selected="${isSignup}">Create account</button>
     </div>
-    <div class="form-actions">
-      <button type="button" class="secondary" id="cloudSignup">Create account</button>
-      <button type="button" class="primary" id="cloudSignin">Sign in</button>
-      <button type="button" class="text-btn" id="cloudTest">Test connection</button>
+    <div class="auth-fields">
+      <div class="field"><label for="cloudEmail">Email address</label><input id="cloudEmail" type="email" autocomplete="email" inputmode="email" autocapitalize="none" spellcheck="false" placeholder="you@example.com"></div>
+      <div class="field"><div class="field-label-row"><label for="cloudPassword">Password</label><button type="button" class="field-link" id="forgotPassword">Forgot password?</button></div><div class="password-wrap"><input id="cloudPassword" type="password" autocomplete="${isSignup?"new-password":"current-password"}" placeholder="${isSignup?"At least 6 characters":"Your password"}"><button type="button" class="password-toggle" id="passwordToggle" aria-label="Show password">Show</button></div></div>
     </div>
-    <p id="cloudAuthMessage" class="cloud-message"></p>`);
-  $("#close").onclick=closeModal;
+    <button type="button" class="primary auth-submit" id="cloudSubmit">${isSignup?"Create account":"Sign in"}</button>
+    <p id="cloudAuthMessage" class="cloud-message" role="status" aria-live="polite"></p>
+    <p class="auth-footnote">Your Life Admin data is protected by your account. Documents stay on the device for now.</p>
+  </div>`);
+
   const email=$("#cloudEmail"),password=$("#cloudPassword"),msg=$("#cloudAuthMessage");
+  let currentMode=isSignup?"signup":"signin";
+  $("#close").onclick=closeModal;
+
+  const setMode=(next,focus=true)=>{
+    currentMode=next;
+    const signup=next==="signup";
+    $("#authTitle").textContent=signup?"Create your account":"Welcome back";
+    $("#authCopy").textContent=signup?"Create an account to keep your Life Admin synced across your devices.":"Sign in to access your Life Admin wherever you use it.";
+    $("#authSignInTab").classList.toggle("active",!signup);
+    $("#authSignUpTab").classList.toggle("active",signup);
+    $("#authSignInTab").setAttribute("aria-selected",String(!signup));
+    $("#authSignUpTab").setAttribute("aria-selected",String(signup));
+    $("#cloudSubmit").textContent=signup?"Create account":"Sign in";
+    password.autocomplete=signup?"new-password":"current-password";
+    password.placeholder=signup?"At least 6 characters":"Your password";
+    $("#forgotPassword").style.display=signup?"none":"inline";
+    $("#passwordToggle").textContent="Show";
+    $("#passwordToggle").setAttribute("aria-label","Show password");
+    msg.textContent="";
+    if(focus)setTimeout(()=>email.focus(),80);
+  };
+
+  $("#authSignInTab").onclick=()=>setMode("signin");
+  $("#authSignUpTab").onclick=()=>setMode("signup");
+  $("#passwordToggle").onclick=()=>{
+    const visible=password.type==="text";
+    password.type=visible?"password":"text";
+    $("#passwordToggle").textContent=visible?"Show":"Hide";
+    $("#passwordToggle").setAttribute("aria-label",visible?"Show password":"Hide password");
+  };
+  $("#forgotPassword").onclick=async()=>{
+    const value=email.value.trim();
+    if(!value){msg.textContent="Enter your email address first.";email.focus();return}
+    if(!cloudClient){msg.textContent="Sync isn't available right now. Please reload and try again.";return}
+    msg.textContent="Sending reset email…";
+    try{
+      const redirectTo=`${window.location.origin}${window.location.pathname}`;
+      const {error}=await cloudClient.auth.resetPasswordForEmail(value,{redirectTo});
+      if(error){showCloudError("Password reset",error);return}
+      msg.textContent="Password reset email sent. Check your inbox and follow the link to continue.";
+    }catch(err){showCloudError("Password reset",err)}
+  };
+
   const validate=()=>{
-    if(!cloudClient){msg.textContent="Cloud connection isn't available. Please reload the Cloud Test app.";return false}
-    if(!email.value.trim()||!password.value){msg.textContent="Enter your email and password.";return false}
-    if(password.value.length<6){msg.textContent="Password must be at least 6 characters.";return false}
+    if(!cloudClient){msg.textContent="Sync isn't available right now. Please reload and try again.";return false}
+    const value=email.value.trim();
+    if(!value||!password.value){msg.textContent="Enter your email address and password.";return false}
+    if(currentMode==="signup"&&password.value.length<6){msg.textContent="Choose a password with at least 6 characters.";return false}
     return true;
   };
   const showCloudError=(action,error)=>{
     console.error(`Cloud ${action} failed`,error);
-    msg.textContent=`${action} failed: ${cloudErrorDetail(error)}`;
+    const raw=cloudErrorDetail(error);
+    let friendly=raw;
+    if(/invalid login credentials/i.test(raw))friendly="That email or password doesn't look right. Try again or reset your password.";
+    else if(/email not confirmed/i.test(raw))friendly="Please confirm your email address first, then try signing in again.";
+    else if(/user already registered/i.test(raw))friendly="An account already exists for this email. Try signing in instead.";
+    else if(/password/i.test(raw)&&/characters|length|weak/i.test(raw))friendly="Choose a stronger password with at least 6 characters.";
+    else if(/network|fetch|load failed/i.test(raw))friendly="We couldn't reach the sync service. Check your connection and try again.";
+    msg.textContent=friendly;
   };
-  $("#cloudSignup").onclick=async()=>{
+
+  $("#cloudSubmit").onclick=async()=>{
     if(!validate())return;
-    msg.textContent="Creating account…";
+    const signup=currentMode==="signup";
+    $("#cloudSubmit").disabled=true;
+    $("#cloudSubmit").classList.add("is-loading");
+    msg.textContent=signup?"Creating your account…":"Signing you in…";
     try{
-      const redirectTo=`${window.location.origin}${window.location.pathname}`;
-      const {data,error}=await cloudClient.auth.signUp({email:email.value.trim(),password:password.value,options:{emailRedirectTo:redirectTo}});
-      if(error){showCloudError("Account creation",error);return}
-      if(data?.session){
-        cloudUser=data.user;closeModal();openSettings();toast("Cloud account created");
+      if(signup){
+        const redirectTo=`${window.location.origin}${window.location.pathname}`;
+        const {data,error}=await cloudClient.auth.signUp({email:email.value.trim(),password:password.value,options:{emailRedirectTo:redirectTo}});
+        if(error){showCloudError("Account creation",error);return}
+        if(data?.session){
+          cloudUser=data.user;closeModal();openSettings();render();toast("Account created — you're signed in");
+        }else{
+          msg.textContent="Account created. Check your email to confirm it, then come back and sign in.";
+          $("#cloudSubmit").textContent="Sign in after confirmation";
+          $("#cloudSubmit").onclick=()=>openCloudAuth("signin");
+        }
       }else{
-        msg.textContent="Account created. Check your email to confirm it, then come back and sign in.";
-      }
-    }catch(err){
-      console.error("Supabase SDK signup failed",err);
-      if(err?.name==="TypeError" && /load failed|failed to fetch|network/i.test(err?.message||"")){
-        try{
-          const data=await cloudAuthRest("signup",{email:email.value.trim(),password:password.value});
-          if(data?.access_token){
-            msg.textContent="Account created, but this browser could not initialise the SDK session automatically. Please tap Sign in once to connect.";
-          }else{
-            msg.textContent="Account created. Check your email to confirm it, then come back and sign in.";
-          }
-        }catch(restErr){showCloudError("Account creation",restErr)}
-      }else{showCloudError("Account creation",err)}
-    }
-  };
-  $("#cloudSignin").onclick=async()=>{
-    if(!validate())return;
-    msg.textContent="Signing in…";
-    try{
-      const {data,error}=await cloudClient.auth.signInWithPassword({email:email.value.trim(),password:password.value});
-      if(error){showCloudError("Sign in",error);return}
-      cloudUser=data.user;
-      // Every explicit sign-in now reconciles with the cloud first. This makes
-      // logout -> login deterministic and prevents a stale local timestamp
-      // from making the device appear up to date when another device has
-      // already written newer data. Never push local data automatically here.
-      const dirty=localStorage.getItem("lifeAdminCloudDirty")==="1";
-      if(!dirty){
-        try{
+        const {data,error}=await cloudClient.auth.signInWithPassword({email:email.value.trim(),password:password.value});
+        if(error){showCloudError("Sign in",error);return}
+        cloudUser=data.user;
+        const dirty=localStorage.getItem("lifeAdminCloudDirty")==="1";
+        if(!dirty){
           const cloud=await cloudReadSnapshot();
           if(cloud){
             applyCloudSnapshot(cloud.snapshot);
             localStorage.setItem("lifeAdminLastCloudSync",cloud.updatedAt||new Date().toISOString());
             localStorage.removeItem("lifeAdminCloudDirty");
-            closeModal();openSettings();render();toast("Connected — latest cloud data loaded");
+            closeModal();openSettings();render();toast("Welcome back — latest data loaded");
             refreshCloudSettings();
             return;
           }
-          // A signed-in account can legitimately have no snapshot yet.
-          // Keep the local workspace and let the first Sync create it.
-          console.info("No cloud snapshot exists yet for this account");
           localStorage.setItem("lifeAdminCloudDirty","1");
-        }catch(syncErr){
-          // Real database/RLS/network errors must not be mistaken for a missing snapshot.
-          console.error("Cloud snapshot check failed",syncErr);
-          throw syncErr;
+        }else{
+          toast("Signed in — local changes are waiting to sync");
         }
-      }else{
-        toast("Connected — local changes are waiting to sync");
+        closeModal();openSettings();refreshCloudSettings();
       }
-      closeModal();openSettings();refreshCloudSettings();
-    }catch(err){showCloudError("Sign in",err)}
-  };
-  $("#cloudTest").onclick=async()=>{
-    if(!cloudClient){msg.textContent="Cloud client did not load. Reload the app and try again.";return}
-    msg.textContent="Testing Supabase Auth endpoint…";
-    try{
-      await cloudAuthSettings();
-      msg.textContent="Supabase Auth is reachable. You can create the test account now.";
-    }catch(err){
-      console.error("Cloud connection diagnostic failed",err);
-      const detail=cloudErrorDetail(err);
-      msg.textContent=`Connection test failed: ${detail}`;
+    }catch(err){showCloudError(signup?"Account creation":"Sign in",err)}
+    finally{
+      const btn=$("#cloudSubmit");
+      if(btn){btn.disabled=false;btn.classList.remove("is-loading")}
     }
   };
+  setMode(currentMode,false);
   installIcons();
+  setTimeout(()=>email.focus(),100);
 }
-
 async function cloudLogout(){
   if(!cloudClient)return;
   // Sign out only this device/session. The cloud snapshot remains untouched
@@ -361,8 +353,7 @@ async function cloudSync(){
   }finally{cloudBusy=false}
 }
 
-// Keep the old internal functions available for future diagnostics/backward
-// compatibility, but normal users now get one simple Sync action.
+// Compatibility wrappers for older local state; the beta exposes one simple Sync action.
 async function cloudPush(){return cloudSync()}
 async function cloudPull(){return cloudSync()}
 
@@ -754,16 +745,16 @@ function openSettings(){
   const themeOptions=Object.entries(THEMES).map(([key,t])=>`<option value="${key}" ${theme===key?"selected":""}>${t.name} — ${t.meta}</option>`).join("");
   openModal(`<div class="modal-header"><h3>Settings</h3><button type="button" class="close" id="close">${icons.close}</button></div>
     <div class="setting-row cloud-setting" style="display:block">
-      <div><b>Cloud Sync</b><small id="cloudStatus">Loading cloud status…</small></div>
+      <div><b>Sync</b><small id="cloudStatus">Loading cloud status…</small></div>
       <div id="cloudActions" class="cloud-actions"></div>
-      <div class="appearance-note">Cloud Lab: use Sync now to save this device to the cloud and refresh the cloud snapshot. Documents remain local for now.</div>
+      <div class="appearance-note">Sync keeps your Life Admin items and calendar up to date across your devices. Documents stay on this device for now.</div>
     </div>
     <div class="setting-row"><div><b>Your name</b><small>Used on the home screen</small></div><button type="button" class="text-btn" id="nameEdit">${state.name?esc(state.name):"Add name"}</button></div>
     <div class="setting-row"><div><b>Notifications</b><small>Request browser permission where supported</small></div><button type="button" class="toggle ${state.settings.notifications?"on":""}" id="notify"><i></i></button></div>
     <div class="setting-row" style="display:block"><div><b>Appearance</b><small>Choose a colour scheme for Life Admin</small></div><div class="theme-picker"><span class="theme-swatch" id="themeSwatch"></span><select id="themeSelect" aria-label="Life Admin theme">${themeOptions}</select></div><div class="appearance-note">Your choice is saved on this device and applies instantly.</div></div>
     <div class="setting-row"><div><b>Backup</b><small>Export your data or restore a previous backup</small></div><div><button type="button" class="text-btn" id="export">Export</button> <button type="button" class="text-btn" id="import">Import</button></div></div>
     <div class="setting-row"><div><b>Data</b><small>${state.items.length} item${state.items.length===1?"":"s"} stored locally</small></div><button type="button" class="text-btn" id="clearData">Clear all</button></div>
-    <p style="font-size:11px;color:var(--muted);margin-top:18px">Life Admin V${APP_VERSION} ${APP_CHANNEL} · Cloud Lab build</p>`);
+    <p style="font-size:11px;color:var(--muted);margin-top:18px">Life Admin V${APP_VERSION} · ${APP_CHANNEL}</p>`);
   $("#close").onclick=closeModal;
   refreshCloudSettings();
   const themeSelect=$("#themeSelect"); if(themeSelect){themeSelect.onchange=()=>{state.settings.theme=themeSelect.value;applyTheme(state.settings.theme);save();openSettings()};}

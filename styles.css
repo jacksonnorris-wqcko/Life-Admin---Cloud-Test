@@ -525,7 +525,7 @@ body,.bottom-nav,.modal,.icon-btn,.stat-card,.agenda-card,.home-tile,.item,.cale
 .modal-header .close{flex:none;}
 .status-badge.needs-attention{background:var(--danger-soft)!important;color:var(--danger)!important;}
 
-/* V10.1 Cloud Lab */
+/* Cloud sync foundation */
 .cloud-setting{gap:10px}
 .cloud-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
 .cloud-copy,.cloud-message{font-size:12px;color:var(--muted);line-height:1.5}
@@ -1033,4 +1033,40 @@ button{-webkit-tap-highlight-color:transparent;}
 @media(min-width:600px){
   .app-shell{box-shadow:0 0 70px color-mix(in srgb,var(--text) 5%,transparent);}
   .topbar{padding-left:20px;padding-right:20px;}
+}
+
+/* =========================================================
+   V12.1 FAMILY BETA — AUTH EXPERIENCE
+   A calmer, more deliberate account flow for first-time users.
+   ========================================================= */
+.auth-modal{max-width:560px;margin:0 auto;position:relative}
+.auth-brand{display:flex;align-items:center;gap:11px;margin-bottom:22px}
+.auth-brand>img{width:42px;height:42px;border-radius:12px;box-shadow:0 5px 16px color-mix(in srgb,var(--accent) 18%,transparent)}
+.auth-brand>div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.auth-brand strong{font-size:12px;letter-spacing:-.01em}
+.auth-brand .mini-label{margin:0;font-size:8px;letter-spacing:.15em;color:var(--accent)}
+.auth-brand .close{margin-left:auto;flex:none}
+.auth-intro{margin-bottom:17px}
+.auth-intro h3{font-size:27px!important;letter-spacing:-.045em!important;line-height:1.08;margin:0 0 6px!important}
+.auth-intro p{font-size:12px;line-height:1.55;color:var(--muted);max-width:430px;margin:0}
+.auth-switch{display:grid;grid-template-columns:1fr 1fr;padding:4px;background:var(--surface-muted);border:1px solid var(--line);border-radius:14px;gap:3px;margin-bottom:17px}
+.auth-switch button{min-height:40px;border-radius:10px;background:transparent;color:var(--muted);font-size:12px;font-weight:800;transition:background .16s ease,color .16s ease,box-shadow .16s ease}
+.auth-switch button.active{background:var(--card);color:var(--text);box-shadow:0 2px 7px color-mix(in srgb,var(--text) 9%,transparent)}
+.auth-fields{display:grid;gap:13px}
+.auth-fields .field{margin:0}
+.field-label-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.field-label-row label{margin:0!important}
+.field-link{padding:0;background:none;color:var(--accent);font-size:10px;font-weight:800}
+.password-wrap{position:relative}
+.password-wrap input{padding-right:66px!important}
+.password-toggle{position:absolute;right:8px;top:50%;transform:translateY(-50%);padding:6px 8px;border-radius:8px;background:var(--surface-muted);color:var(--accent);font-size:10px;font-weight:850}
+.auth-submit{width:100%;margin-top:17px;min-height:49px!important;font-size:13px!important;box-shadow:0 8px 18px color-mix(in srgb,var(--accent) 17%,transparent)!important}
+.auth-submit:disabled{opacity:.68;cursor:wait;transform:none!important}
+.auth-submit.is-loading{position:relative}
+.cloud-message{min-height:0;margin:10px 0 0!important;padding:0 2px;font-size:11px!important;line-height:1.45!important}
+.auth-footnote{text-align:center;font-size:9.5px;line-height:1.45;color:var(--muted);margin:16px auto 0;max-width:410px}
+@media(max-width:600px){
+  .auth-intro h3{font-size:25px!important}
+  .auth-brand{margin-bottom:20px}
+  .auth-submit{min-height:50px!important}
 }
