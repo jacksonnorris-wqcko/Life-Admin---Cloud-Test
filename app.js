@@ -1,6 +1,6 @@
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
-const APP_VERSION="12.1.3";
+const APP_VERSION="12.1.4";
 const APP_CHANNEL="Beta";
 // ---------------- CLOUD SYNC / SUPABASE ----------------
 // Browser-safe Supabase publishable key. Database access is protected by RLS.
@@ -462,13 +462,22 @@ function updateHeader(){
   const tab=document.querySelector(".nav-item.active")?.dataset.tab||"home";
   const titleEl=$("#pageTitle"), eyebrowEl=$("#tabEyebrow"), nameEl=$("#userName");
   if(!titleEl)return;
-  const titles={home:"",items:"Your items",calendar:"Calendar",money:"Money centre",more:"More"};
-  const eyebrows={home:"LIFE ADMIN",items:"ITEMS",calendar:"CALENDAR",money:"MONEY",more:"MORE"};
+  const titles={home:"",items:"Items",calendar:"Calendar",money:"Money",more:"More"};
+  const subtitles={home:"",items:"Bills, tasks & reminders",calendar:"Your schedule at a glance",money:"Keep an eye on what’s coming up",more:"Settings, documents & account"};
+  const eyebrows={home:"LIFE ADMIN",items:"",calendar:"",money:"",more:""};
   const h=new Date().getHours();
   const greeting=h<12?"Good morning":h<18?"Good afternoon":"Good evening";
   titleEl.firstChild.nodeValue=tab==="home"?greeting:(titles[tab]||"Life Admin");
   if(nameEl)nameEl.textContent=tab==="home"&&state.name?`, ${esc(state.name)}`:"";
-  if(eyebrowEl)eyebrowEl.textContent=eyebrows[tab]||"LIFE ADMIN";
+  if(eyebrowEl){
+    eyebrowEl.textContent=eyebrows[tab]||"";
+    eyebrowEl.hidden=tab!=="home";
+  }
+  const subtitleEl=$("#pageSubtitle");
+  if(subtitleEl){
+    subtitleEl.textContent=subtitles[tab]||"";
+    subtitleEl.hidden=tab==="home";
+  }
 }
 function status(i){if(i.completed)return"complete";const d=daysUntil(i.due);if(i.moneyType==="income"&&d<=0)return"complete";return d<0?"overdue":d<=SOON_DAYS?"soon":""}
 function filteredItems(){

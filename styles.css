@@ -1187,3 +1187,40 @@ button{-webkit-tap-highlight-color:transparent;}
   .topbar .header-actions{gap:6px}
   .topbar .icon-btn{width:40px;height:40px}
 }
+
+
+/* =========================================================
+   V12.1.4 — HEADER REFINEMENT
+   Cleaner section titles + quieter sync indicator.
+   ========================================================= */
+.topbar{padding-top:18px!important;padding-bottom:13px!important}
+.topbar .brand-lockup{gap:11px!important;align-items:center}
+.topbar .brand-mark{width:36px!important;height:36px!important;border-radius:11px!important;box-shadow:0 2px 9px rgba(24,45,36,.10)!important}
+.header-copy{min-width:0;display:flex;flex-direction:column;justify-content:center}
+.topbar .brand-lockup h1{font-size:24px!important;line-height:1.08!important;font-weight:760!important;letter-spacing:-.042em!important;color:var(--text)!important}
+.topbar .eyebrow{font-size:9px!important;line-height:1!important;letter-spacing:.16em!important;font-weight:800!important;margin:0 0 4px!important;color:var(--accent)!important}
+.page-subtitle{font-size:11px!important;line-height:1.25!important;color:var(--muted)!important;margin:4px 0 0!important;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* The account button is intentionally quieter than the primary page title. */
+.account-header-btn{width:42px!important;height:42px!important;border-radius:13px!important;background:color-mix(in srgb,var(--card) 94%,var(--accent-soft))!important;border:1px solid color-mix(in srgb,var(--accent) 9%,var(--line))!important;box-shadow:0 2px 9px rgba(24,45,36,.045)!important;color:var(--muted)!important}
+.account-header-btn .header-cloud-icon svg{width:19px!important;height:19px!important;stroke-width:1.75!important}
+.account-header-btn.sync-connected .header-cloud-icon{color:var(--accent)!important}
+.account-header-btn.sync-dirty .header-cloud-icon{color:var(--text)!important}
+.account-header-btn.sync-offline .header-cloud-icon{color:#8a939c!important}
+.account-header-btn.syncing .header-cloud-icon{color:var(--accent)!important}
+.header-status-dot{right:4px!important;top:4px!important;width:6px!important;height:6px!important;border:2px solid var(--card)!important;box-shadow:none!important;animation:none!important}
+.header-status-dot.connected{background:#27a56d!important;box-shadow:0 0 0 1px color-mix(in srgb,#27a56d 18%,transparent)!important}
+.header-status-dot.dirty{background:#d18a2d!important;box-shadow:0 0 0 1px color-mix(in srgb,#d18a2d 18%,transparent)!important}
+.header-status-dot.syncing{background:#4d8fd6!important;box-shadow:0 0 0 1px color-mix(in srgb,#4d8fd6 18%,transparent)!important;animation:syncPulse .9s ease-in-out infinite alternate!important}
+.header-status-dot.offline{background:#a7afb7!important}
+.account-header-btn.sync-dirty .header-cloud-icon svg{animation:none!important}
+.account-header-btn.syncing .header-cloud-icon svg{animation:none!important}
+
+@media(max-width:430px){
+  .topbar{padding-top:15px!important;padding-bottom:12px!important}
+  .topbar .brand-mark{width:35px!important;height:35px!important}
+  .topbar .brand-lockup{gap:10px!important}
+  .topbar .brand-lockup h1{font-size:22px!important}
+  .page-subtitle{font-size:10.5px!important}
+  .account-header-btn{width:40px!important;height:40px!important;border-radius:12px!important}
+}
