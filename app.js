@@ -1,6 +1,6 @@
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
-const APP_VERSION="11.6.3";
+const APP_VERSION="12.0.0";
 const APP_CHANNEL="Cloud Test";
 // ---------------- CLOUD LAB / SUPABASE ----------------
 // Browser-safe Supabase publishable key. Database access is protected by RLS.
