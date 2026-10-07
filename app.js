@@ -690,7 +690,7 @@ function bindGlobal(){document.addEventListener("keydown",e=>{if((e.key==="Enter
 async function registerAppUpdater(){
   if(!("serviceWorker" in navigator)) return;
   try{
-    const registration=await navigator.serviceWorker.register("./sw.js",{scope:"./",updateViaCache:"none"});
+    const registration=await navigator.serviceWorker.register(`./sw.js?v=${APP_VERSION}`,{scope:"./",updateViaCache:"none"});
     // Ask the browser to check for a fresh worker whenever the app opens.
     await registration.update();
   }catch(error){
