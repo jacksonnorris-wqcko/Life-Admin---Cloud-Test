@@ -55,3 +55,12 @@ V10.0 visual polish: cleaner calendar presentation, refined interactive states, 
 
 ## V10 Cloud Lab Baseline
 This is a copy of the polished local-first Life Admin build prepared as the baseline for a separate cloud-sync experiment. Cloud sync is not implemented in this baseline.
+
+
+## V10.1 — Cloud Lab
+- Added Supabase browser client using the project publishable key.
+- Added email/password Cloud Sync account creation and sign-in.
+- Added manual Push local / Pull cloud controls in Settings.
+- Life Admin items are stored in `public.life_admin_items` under the signed-in Supabase user.
+- Documents remain local in this first cloud prototype.
+- Local V9.9/V10 data storage key remains unchanged.

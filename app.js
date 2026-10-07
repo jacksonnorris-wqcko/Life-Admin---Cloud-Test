@@ -2,6 +2,148 @@ const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const APP_VERSION="10.0";
 const APP_CHANNEL="Alpha";
+// ---------------- CLOUD LAB / SUPABASE ----------------
+// Browser-safe Supabase publishable key. Database access is protected by RLS.
+const SUPABASE_URL="https://cfpfcwtozxhvqclovupm.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY="sb_publishable_0WEwGiBXkbHCWw7gttNkdQ_xl64Hk1Q";
+const cloudClient=(window.supabase&&window.supabase.createClient)
+  ? window.supabase.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}})
+  : null;
+let cloudUser=null;
+let cloudBusy=false;
+
+async function cloudInit(){
+  if(!cloudClient)return;
+  try{
+    const {data}=await cloudClient.auth.getSession();
+    cloudUser=data?.session?.user||null;
+    cloudClient.auth.onAuthStateChange((_event,session)=>{
+      cloudUser=session?.user||null;
+      if(document.querySelector("#cloudStatus")) refreshCloudSettings();
+    });
+  }catch(err){console.warn("Cloud auth init failed",err)}
+}
+
+function cloudSafeItem(item){
+  const copy={...item};
+  delete copy.attachments; // Documents remain local for this first cloud prototype.
+  return copy;
+}
+
+function cloudStatusText(){
+  if(!cloudClient)return "Cloud connection unavailable";
+  if(cloudUser)return `Connected as ${esc(cloudUser.email||"signed-in user")}`;
+  return "Not connected";
+}
+
+function refreshCloudSettings(){
+  const status=$("#cloudStatus"), actions=$("#cloudActions");
+  if(!status||!actions)return;
+  status.innerHTML=cloudStatusText();
+  if(cloudUser){
+    actions.innerHTML=`<button type="button" class="text-btn" id="cloudPush">Push local</button>
+      <button type="button" class="text-btn" id="cloudPull">Pull cloud</button>
+      <button type="button" class="text-btn" id="cloudLogout">Sign out</button>`;
+    $("#cloudPush").onclick=cloudPush;
+    $("#cloudPull").onclick=cloudPull;
+    $("#cloudLogout").onclick=cloudLogout;
+  }else{
+    actions.innerHTML=`<button type="button" class="text-btn" id="cloudConnect">Connect</button>`;
+    $("#cloudConnect").onclick=()=>openCloudAuth();
+  }
+}
+
+function openCloudAuth(){
+  openModal(`<div class="modal-header"><h3>Cloud Sync</h3><button type="button" class="close" id="close">${icons.close}</button></div>
+    <p class="cloud-copy">Sign in to your Life Admin Cloud Test account. This first cloud build syncs your Life Admin items only; documents stay on each device.</p>
+    <div class="form-grid">
+      <div class="field"><label>Email</label><input id="cloudEmail" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com"></div>
+      <div class="field"><label>Password</label><input id="cloudPassword" type="password" autocomplete="current-password" placeholder="At least 6 characters"></div>
+    </div>
+    <div class="form-actions">
+      <button type="button" class="secondary" id="cloudSignup">Create account</button>
+      <button type="button" class="primary" id="cloudSignin">Sign in</button>
+    </div>
+    <p id="cloudAuthMessage" class="cloud-message"></p>`);
+  $("#close").onclick=closeModal;
+  const email=$("#cloudEmail"),password=$("#cloudPassword"),msg=$("#cloudAuthMessage");
+  const validate=()=>{if(!email.value.trim()||!password.value){msg.textContent="Enter your email and password.";return false}if(password.value.length<6){msg.textContent="Password must be at least 6 characters.";return false}return true};
+  $("#cloudSignup").onclick=async()=>{
+    if(!validate())return;
+    msg.textContent="Creating account…";
+    const {data,error}=await cloudClient.auth.signUp({email:email.value.trim(),password:password.value});
+    if(error){msg.textContent=error.message;return}
+    if(data?.session){
+      cloudUser=data.user;closeModal();openSettings();toast("Cloud account created");
+    }else{
+      msg.textContent="Account created. Check your email to confirm it, then come back and sign in.";
+    }
+  };
+  $("#cloudSignin").onclick=async()=>{
+    if(!validate())return;
+    msg.textContent="Signing in…";
+    const {data,error}=await cloudClient.auth.signInWithPassword({email:email.value.trim(),password:password.value});
+    if(error){msg.textContent=error.message;return}
+    cloudUser=data.user;closeModal();openSettings();toast("Connected to cloud");
+  };
+  installIcons();
+}
+
+async function cloudLogout(){
+  if(!cloudClient)return;
+  const {error}=await cloudClient.auth.signOut();
+  if(error){toast(error.message);return}
+  cloudUser=null;openSettings();toast("Signed out");
+}
+
+async function cloudPush(){
+  if(!cloudClient||!cloudUser){openCloudAuth();return}
+  if(cloudBusy)return;
+  if(!state.items.length){toast("No Life Admin items to push");return}
+  cloudBusy=true;toast("Pushing local items…");
+  try{
+    const now=new Date().toISOString();
+    const rows=state.items.map(item=>({
+      id:item.id,
+      title:item.title||"Untitled",
+      data:cloudSafeItem(item),
+      updated_at:now
+    }));
+    const {error}=await cloudClient.from("life_admin_items").upsert(rows,{onConflict:"id"});
+    if(error)throw error;
+    toast(`${rows.length} item${rows.length===1?"":"s"} pushed to cloud`);
+    openSettings();
+  }catch(err){
+    console.error(err);
+    toast(`Cloud push failed: ${err.message||err}`);
+  }finally{cloudBusy=false}
+}
+
+async function cloudPull(){
+  if(!cloudClient||!cloudUser){openCloudAuth();return}
+  if(cloudBusy)return;
+  cloudBusy=true;toast("Pulling cloud items…");
+  try{
+    const {data,error}=await cloudClient.from("life_admin_items").select("id,title,data,updated_at").order("updated_at",{ascending:true});
+    if(error)throw error;
+    const localById=new Map(state.items.map(item=>[item.id,item]));
+    (data||[]).forEach(row=>{
+      const incoming=row.data&&typeof row.data==="object"?{...row.data}:null;
+      if(!incoming)return;
+      const local=localById.get(row.id);
+      if(local&&Array.isArray(local.attachments))incoming.attachments=local.attachments;
+      localById.set(row.id,incoming);
+    });
+    state.items=[...localById.values()];
+    save();
+    toast(`${(data||[]).length} cloud item${(data||[]).length===1?"":"s"} pulled`);
+    openSettings();
+  }catch(err){
+    console.error(err);
+    toast(`Cloud pull failed: ${err.message||err}`);
+  }finally{cloudBusy=false}
+}
+
 const STORE="lifeAdminV2";
 const ATTENTION_DAYS=0;
 const SOON_DAYS=14;
@@ -352,7 +494,30 @@ function eventOccurrenceDates(e,start,end){
   return out;
 }
 function renderList(list){const el=$("#itemList");if(!list.length){el.innerHTML=`<div class="empty">${view.search?"No items match your search.":view.filter==="attention"?"No upcoming items. Nice work.":"Nothing to show here."}</div>`;return}el.innerHTML=list.map(i=>{const d=daysUntil(i.due),c=cats[i.category]||cats.other,st=status(i),date=i.completed?`Completed ${formatDate(i.completedAt||i.due)}`:d<0?`${Math.abs(d)}d late`:d===0?"Today":d===1?"Tomorrow":formatDate(i.due);return `<div class="item ${st} ${i.pinned?"pinned":""}" data-id="${i.id}"><button type="button" class="check-button" data-complete="${i.id}" aria-label="${i.completed?"Reopen":"Complete"}">${i.completed?icons.check:""}</button><button type="button" class="item-icon" data-open="${i.id}" aria-label="Open ${esc(i.title)}">${iconFor(i.category)}</button><button type="button" class="item-main" data-open="${i.id}"><div class="item-title">${i.pinned?`<span class="pin-mark">★</span> `:""}${priorityRank(i.priority)<2?`<span class="priority-pill ${i.priority}">${priorityLabel(i.priority)}</span> `:""}${esc(i.title)}</div><div class="item-meta"><span>${esc(c.name)}</span>${i.repeat&&i.repeat!=="Doesn't repeat"?`<span>· ${icons.repeat} ${esc(i.repeat)}</span>`:""}${Number(i.cost)>0?`<span class="${i.moneyType==="income"?"income-text":""}">· ${i.moneyType==="income"?"+":"-"}${money(i.cost)}</span>`:""}</div></button><button type="button" class="item-date" data-open="${i.id}"><div class="date-label">${i.completed?"Done":d<0?"Overdue":d<=14?"Coming up":"Due"}</div><div class="date-value">${date}</div></button></div>`}).join("")}
-function openSettings(){const theme=state.settings.theme||"forest";const cards=Object.entries(THEMES).map(([key,t])=>`<button type="button" class="theme-card ${theme===key?"selected":""}" data-theme-choice="${key}"><span class="theme-preview ${key}"><i></i><b></b></span><span class="theme-name">${t.name}</span></button>`).join("");openModal(`<div class="modal-header"><h3>Settings</h3><button type="button" class="close" id="close">${icons.close}</button></div><div class="setting-row"><div><b>Your name</b><small>Used on the home screen</small></div><button type="button" class="text-btn" id="nameEdit">${state.name?esc(state.name):"Add name"}</button></div><div class="setting-row"><div><b>Notifications</b><small>Request browser permission where supported</small></div><button type="button" class="toggle ${state.settings.notifications?"on":""}" id="notify"><i></i></button></div><div class="setting-row" style="display:block"><div><b>Appearance</b><small>Choose a colour scheme for Life Admin</small></div><div class="theme-grid">${cards}</div><div class="appearance-note">Your choice is saved on this device and applies instantly.</div></div><div class="setting-row"><div><b>Backup</b><small>Export your data or restore a previous backup</small></div><div><button type="button" class="text-btn" id="export">Export</button> <button type="button" class="text-btn" id="import">Import</button></div></div><div class="setting-row"><div><b>Data</b><small>${state.items.length} item${state.items.length===1?"":"s"} stored locally</small></div><button type="button" class="text-btn" id="clearData">Clear all</button></div><p style="font-size:11px;color:var(--muted);margin-top:18px">Life Admin V${APP_VERSION} ${APP_CHANNEL} · Local-first build</p>`);$("#close").onclick=closeModal;$$('[data-theme-choice]').forEach(btn=>btn.onclick=()=>{state.settings.theme=btn.dataset.themeChoice;applyTheme(state.settings.theme);save();openSettings()});$("#nameEdit").onclick=()=>{const n=prompt("What should we call you?",state.name);if(n!==null){state.name=n.trim();save();openSettings()}};$("#notify").onclick=async()=>{if("Notification" in window){const p=await Notification.requestPermission();state.settings.notifications=p==="granted";save();openSettings()}else toast("Notifications aren't supported here")};$("#export").onclick=exportData;$("#import").onclick=()=>{$("#fileInput").accept=".json,application/json";$("#fileInput").onchange=importData;$("#fileInput").click()};$("#clearData").onclick=()=>{if(confirm("Delete every Life Admin item and document? This cannot be undone.")){const theme=state.settings.theme||"forest";state={name:state.name,items:[],events:[],documents:[],settings:{notifications:false,theme}};idbClearFiles();save();closeModal()}}}
+function openSettings(){
+  const theme=state.settings.theme||"forest";
+  const cards=Object.entries(THEMES).map(([key,t])=>`<button type="button" class="theme-card ${theme===key?"selected":""}" data-theme-choice="${key}"><span class="theme-preview ${key}"><i></i><b></b></span><span class="theme-name">${t.name}</span></button>`).join("");
+  openModal(`<div class="modal-header"><h3>Settings</h3><button type="button" class="close" id="close">${icons.close}</button></div>
+    <div class="setting-row cloud-setting" style="display:block">
+      <div><b>Cloud Sync</b><small id="cloudStatus">Loading cloud status…</small></div>
+      <div id="cloudActions" class="cloud-actions"></div>
+      <div class="appearance-note">Cloud Lab only: Life Admin items sync between signed-in devices. Documents remain local for now.</div>
+    </div>
+    <div class="setting-row"><div><b>Your name</b><small>Used on the home screen</small></div><button type="button" class="text-btn" id="nameEdit">${state.name?esc(state.name):"Add name"}</button></div>
+    <div class="setting-row"><div><b>Notifications</b><small>Request browser permission where supported</small></div><button type="button" class="toggle ${state.settings.notifications?"on":""}" id="notify"><i></i></button></div>
+    <div class="setting-row" style="display:block"><div><b>Appearance</b><small>Choose a colour scheme for Life Admin</small></div><div class="theme-grid">${cards}</div><div class="appearance-note">Your choice is saved on this device and applies instantly.</div></div>
+    <div class="setting-row"><div><b>Backup</b><small>Export your data or restore a previous backup</small></div><div><button type="button" class="text-btn" id="export">Export</button> <button type="button" class="text-btn" id="import">Import</button></div></div>
+    <div class="setting-row"><div><b>Data</b><small>${state.items.length} item${state.items.length===1?"":"s"} stored locally</small></div><button type="button" class="text-btn" id="clearData">Clear all</button></div>
+    <p style="font-size:11px;color:var(--muted);margin-top:18px">Life Admin V${APP_VERSION} ${APP_CHANNEL} · Cloud Lab build</p>`);
+  $("#close").onclick=closeModal;
+  refreshCloudSettings();
+  $$('[data-theme-choice]').forEach(btn=>btn.onclick=()=>{state.settings.theme=btn.dataset.themeChoice;applyTheme(state.settings.theme);save();openSettings()});
+  $("#nameEdit").onclick=()=>{const n=prompt("What should we call you?",state.name);if(n!==null){state.name=n.trim();save();openSettings()}};
+  $("#notify").onclick=async()=>{if("Notification" in window){const p=await Notification.requestPermission();state.settings.notifications=p==="granted";save();openSettings()}else toast("Notifications aren't supported here")};
+  $("#export").onclick=exportData;
+  $("#import").onclick=()=>{$("#fileInput").accept=".json,application/json";$("#fileInput").onchange=importData;$("#fileInput").click()};
+  $("#clearData").onclick=()=>{if(confirm("Delete every Life Admin item and document? This cannot be undone.")){const theme=state.settings.theme||"forest";state={name:state.name,items:[],events:[],documents:[],settings:{notifications:false,theme}};idbClearFiles();save();closeModal()}};
+}
 function openModal(html){$("#modal").innerHTML=html;$("#modalBackdrop").classList.remove("hidden");installIcons()}
 function closeModal(){$("#modalBackdrop").classList.add("hidden")}
 function categoryOptions(selected){return Object.entries(cats).map(([k,v])=>`<option value="${k}" ${k===selected?"selected":""}>${v.name}</option>`).join("")}

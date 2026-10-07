@@ -503,3 +503,9 @@ body,.bottom-nav,.modal,.icon-btn,.stat-card,.agenda-card,.home-tile,.item,.cale
 .document-open,.attachment-open{cursor:pointer;}
 .modal-header .close{flex:none;}
 .status-badge.needs-attention{background:var(--danger-soft)!important;color:var(--danger)!important;}
+
+/* V10.1 Cloud Lab */
+.cloud-setting{gap:10px}
+.cloud-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.cloud-copy,.cloud-message{font-size:12px;color:var(--muted);line-height:1.5}
+.cloud-message{min-height:18px;margin:10px 0 0}
