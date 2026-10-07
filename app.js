@@ -1,6 +1,6 @@
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
-const APP_VERSION="10.8";
+const APP_VERSION="11.0";
 const APP_CHANNEL="Cloud Test";
 // ---------------- CLOUD LAB / SUPABASE ----------------
 // Browser-safe Supabase publishable key. Database access is protected by RLS.
@@ -84,7 +84,11 @@ function cloudSafeItem(item){
 
 function cloudStatusText(){
   if(!cloudClient)return "Cloud connection unavailable";
-  if(cloudUser)return `Connected as ${esc(cloudUser.email||"signed-in user")}`;
+  if(cloudUser){
+    const last=localStorage.getItem("lifeAdminLastCloudSync");
+    const when=last?` · Last synced ${new Date(last).toLocaleString([], {dateStyle:"short",timeStyle:"short"})}`:"";
+    return `Connected as ${esc(cloudUser.email||"signed-in user")}${when}`;
+  }
   return "Not connected";
 }
 
@@ -93,11 +97,9 @@ function refreshCloudSettings(){
   if(!status||!actions)return;
   status.innerHTML=cloudStatusText();
   if(cloudUser){
-    actions.innerHTML=`<button type="button" class="text-btn" id="cloudPush">Push local</button>
-      <button type="button" class="text-btn" id="cloudPull">Pull cloud</button>
+    actions.innerHTML=`<button type="button" class="primary" id="cloudSync">☁️ Sync now</button>
       <button type="button" class="text-btn" id="cloudLogout">Sign out</button>`;
-    $("#cloudPush").onclick=cloudPush;
-    $("#cloudPull").onclick=cloudPull;
+    $("#cloudSync").onclick=cloudSync;
     $("#cloudLogout").onclick=cloudLogout;
   }else{
     actions.innerHTML=`<button type="button" class="text-btn" id="cloudConnect">Connect</button>`;
@@ -107,7 +109,7 @@ function refreshCloudSettings(){
 
 function openCloudAuth(){
   openModal(`<div class="modal-header"><h3>Cloud Sync</h3><button type="button" class="close" id="close">${icons.close}</button></div>
-    <p class="cloud-copy">Sign in to your Life Admin Cloud Test account. This first cloud build syncs your Life Admin items only; documents stay on each device.</p>
+    <p class="cloud-copy">Sign in to your Life Admin Cloud Test account. Sync keeps your Life Admin items and calendar up to date across your devices. Documents remain on each device for now.</p>
     <div class="form-grid">
       <div class="field"><label>Email</label><input id="cloudEmail" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com"></div>
       <div class="field"><label>Password</label><input id="cloudPassword" type="password" autocomplete="current-password" placeholder="At least 6 characters"></div>
@@ -200,87 +202,83 @@ async function cloudLogout(){
   toast("Signed out — this device's data was cleared");
 }
 
-async function cloudPush(){
+async function cloudWriteSnapshot(){
+  const snapshot={
+    schemaVersion:1,
+    appVersion:APP_VERSION,
+    exportDate:new Date().toISOString(),
+    name:state.name||"",
+    items:(Array.isArray(state.items)?state.items:[]).map(cloudSafeItem),
+    events:Array.isArray(state.events)?state.events:[],
+    settings:state.settings||{}
+  };
+  const snapshotId=cloudUser.id;
+  const {error:upsertError}=await cloudClient
+    .from("life_admin_items")
+    .upsert({id:snapshotId,title:"Life Admin Snapshot",data:snapshot,updated_at:snapshot.exportDate},{onConflict:"id"});
+  if(upsertError)throw upsertError;
+  const {error:deleteError}=await cloudClient
+    .from("life_admin_items")
+    .delete()
+    .eq("user_id",cloudUser.id)
+    .neq("id",snapshotId);
+  if(deleteError)throw deleteError;
+  return snapshot;
+}
+
+async function cloudReadSnapshot(){
+  const {data,error}=await cloudClient
+    .from("life_admin_items")
+    .select("id,title,data,updated_at")
+    .eq("user_id",cloudUser.id)
+    .order("updated_at",{ascending:false})
+    .limit(1);
+  if(error)throw error;
+  const row=data?.[0];
+  const snapshot=row?.data&&typeof row.data==="object"?row.data:null;
+  if(!snapshot)throw new Error("No cloud snapshot found");
+  return snapshot;
+}
+
+function applyCloudSnapshot(snapshot){
+  state.name=snapshot.name||"";
+  state.items=Array.isArray(snapshot.items)
+    ? snapshot.items.map(i=>({...i,attachments:Array.isArray(i.attachments)?i.attachments:[]}))
+    : [];
+  state.events=Array.isArray(snapshot.events)?snapshot.events:[];
+  state.settings={notifications:false,theme:"forest",...(snapshot.settings||{})};
+  applyTheme(state.settings.theme);
+  save();
+  calendarView={month:startOfMonth(today()),selected:dateKey(today())};
+  renderCalendar();
+}
+
+async function cloudSync(){
   if(!cloudClient||!cloudUser){openCloudAuth();return}
   if(cloudBusy)return;
-  cloudBusy=true;toast("Replacing cloud data…");
+  cloudBusy=true;
   try{
-    // Cloud storage is a single snapshot per account. A push deliberately
-    // replaces the previous snapshot so deleted local items/events don't
-    // linger in the cloud.
-    const snapshot={
-      schemaVersion:1,
-      appVersion:APP_VERSION,
-      exportDate:new Date().toISOString(),
-      name:state.name||"",
-      items:(Array.isArray(state.items)?state.items:[]).map(cloudSafeItem),
-      events:Array.isArray(state.events)?state.events:[],
-      settings:state.settings||{}
-    };
-    const snapshotId=cloudUser.id;
-    // Write the new snapshot first, then remove any older per-item rows.
-    // This avoids leaving the account with no cloud data if an insert fails.
-    const {error:upsertError}=await cloudClient
-      .from("life_admin_items")
-      .upsert({
-        id:snapshotId,
-        title:"Life Admin Snapshot",
-        data:snapshot,
-        updated_at:snapshot.exportDate
-      },{onConflict:"id"});
-    if(upsertError)throw upsertError;
-    const {error:deleteError}=await cloudClient
-      .from("life_admin_items")
-      .delete()
-      .eq("user_id",cloudUser.id)
-      .neq("id",snapshotId);
-    if(deleteError)throw deleteError;
-    toast("Local data replaced cloud snapshot");
+    toast("Syncing… saving your latest changes");
+    // Deliberately save this device's complete workspace first. The cloud is
+    // a single snapshot, so this prevents stale local data being lost.
+    await cloudWriteSnapshot();
+    toast("Syncing… refreshing from cloud");
+    const snapshot=await cloudReadSnapshot();
+    applyCloudSnapshot(snapshot);
+    localStorage.setItem("lifeAdminLastCloudSync",new Date().toISOString());
+    toast("✓ Everything is up to date");
     openSettings();
   }catch(err){
-    console.error(err);
-    toast(`Cloud push failed: ${err.message||err}`);
+    console.error("Cloud sync failed",err);
+    toast(`Cloud sync failed: ${err.message||err}`);
+    openSettings();
   }finally{cloudBusy=false}
 }
 
-async function cloudPull(){
-  if(!cloudClient||!cloudUser){openCloudAuth();return}
-  if(cloudBusy)return;
-  cloudBusy=true;toast("Pulling cloud snapshot…");
-  try{
-    const {data,error}=await cloudClient
-      .from("life_admin_items")
-      .select("id,title,data,updated_at")
-      .eq("user_id",cloudUser.id)
-      .order("updated_at",{ascending:false})
-      .limit(1);
-    if(error)throw error;
-    const row=data?.[0];
-    const snapshot=row?.data&&typeof row.data==="object"?row.data:null;
-    if(!snapshot){
-      toast("No cloud snapshot found");
-      openSettings();
-      return;
-    }
-    // Pull is a true restore: local Life Admin items and calendar events are
-    // replaced by the cloud snapshot rather than merged with stale local data.
-    state.name=snapshot.name||"";
-    state.items=Array.isArray(snapshot.items)
-      ? snapshot.items.map(i=>({...i,attachments:Array.isArray(i.attachments)?i.attachments:[]}))
-      : [];
-    state.events=Array.isArray(snapshot.events)?snapshot.events:[];
-    state.settings={notifications:false,theme:"forest",...(snapshot.settings||{})};
-    applyTheme(state.settings.theme);
-    save();
-    calendarView={month:startOfMonth(today()),selected:dateKey(today())};
-    renderCalendar();
-    toast("Cloud snapshot pulled — local data replaced");
-    openSettings();
-  }catch(err){
-    console.error(err);
-    toast(`Cloud pull failed: ${err.message||err}`);
-  }finally{cloudBusy=false}
-}
+// Keep the old internal functions available for future diagnostics/backward
+// compatibility, but normal users now get one simple Sync action.
+async function cloudPush(){return cloudSync()}
+async function cloudPull(){return cloudSync()}
 
 const STORE="lifeAdminV2";
 const ATTENTION_DAYS=0;
@@ -639,7 +637,7 @@ function openSettings(){
     <div class="setting-row cloud-setting" style="display:block">
       <div><b>Cloud Sync</b><small id="cloudStatus">Loading cloud status…</small></div>
       <div id="cloudActions" class="cloud-actions"></div>
-      <div class="appearance-note">Cloud Lab only: Life Admin items sync between signed-in devices. Documents remain local for now.</div>
+      <div class="appearance-note">Cloud Lab: use Sync now to save this device to the cloud and refresh the cloud snapshot. Documents remain local for now.</div>
     </div>
     <div class="setting-row"><div><b>Your name</b><small>Used on the home screen</small></div><button type="button" class="text-btn" id="nameEdit">${state.name?esc(state.name):"Add name"}</button></div>
     <div class="setting-row"><div><b>Notifications</b><small>Request browser permission where supported</small></div><button type="button" class="toggle ${state.settings.notifications?"on":""}" id="notify"><i></i></button></div>

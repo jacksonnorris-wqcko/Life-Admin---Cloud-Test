@@ -1,4 +1,4 @@
-# Life Admin V10.8 — Cloud Test
+# Life Admin V11.0 — Cloud Test
 
 Cloud Lab build based on V10.4 corrected Supabase configuration.
 
@@ -10,11 +10,11 @@ Cloud Lab build based on V10.4 corrected Supabase configuration.
 - Existing authentication, RLS and cloud push/pull behaviour are otherwise unchanged.
 
 
-### V10.6 update handling
+### V11.0 update handling
 The Cloud Test uses a network-first service worker for the app shell and checks for a fresh service worker whenever the app opens.
 This is designed to pick up new GitHub Pages builds automatically without users clearing browser/site data. Offline fallback remains available for previously cached app-shell files.
 
-### V10.8 cloud snapshot sync
+### V11.0 cloud snapshot sync
 - Calendar events are included in cloud transfers.
 - Push replaces the signed-in user's previous cloud snapshot instead of accumulating stale rows.
 - Pull restores the cloud snapshot and replaces local Life Admin items/events rather than merging stale local data.
@@ -22,5 +22,10 @@ This is designed to pick up new GitHub Pages builds automatically without users 
 
 
 
-### V10.8 local sign-out cleanup
+### V11.0 local sign-out cleanup
 Signing out clears this device's local Life Admin items, calendar events, local document metadata, and locally stored document files. The cloud snapshot is not deleted. Sign-out uses a local session scope so other devices remain signed in.
+
+### V11.0 Alpha Prep
+- Replaced separate Push local / Pull cloud controls with one Sync now action.
+- Sync saves the current device snapshot first, then reads it back and refreshes the local workspace.
+- Shows the last successful sync time.
