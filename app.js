@@ -1,6 +1,6 @@
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
-const APP_VERSION="10.6";
+const APP_VERSION="10.7";
 const APP_CHANNEL="Cloud Test";
 // ---------------- CLOUD LAB / SUPABASE ----------------
 // Browser-safe Supabase publishable key. Database access is protected by RLS.
@@ -189,19 +189,39 @@ async function cloudLogout(){
 async function cloudPush(){
   if(!cloudClient||!cloudUser){openCloudAuth();return}
   if(cloudBusy)return;
-  if(!state.items.length){toast("No Life Admin items to push");return}
-  cloudBusy=true;toast("Pushing local items…");
+  cloudBusy=true;toast("Replacing cloud data…");
   try{
-    const now=new Date().toISOString();
-    const rows=state.items.map(item=>({
-      id:item.id,
-      title:item.title||"Untitled",
-      data:cloudSafeItem(item),
-      updated_at:now
-    }));
-    const {error}=await cloudClient.from("life_admin_items").upsert(rows,{onConflict:"id"});
-    if(error)throw error;
-    toast(`${rows.length} item${rows.length===1?"":"s"} pushed to cloud`);
+    // Cloud storage is a single snapshot per account. A push deliberately
+    // replaces the previous snapshot so deleted local items/events don't
+    // linger in the cloud.
+    const snapshot={
+      schemaVersion:1,
+      appVersion:APP_VERSION,
+      exportDate:new Date().toISOString(),
+      name:state.name||"",
+      items:(Array.isArray(state.items)?state.items:[]).map(cloudSafeItem),
+      events:Array.isArray(state.events)?state.events:[],
+      settings:state.settings||{}
+    };
+    const snapshotId=cloudUser.id;
+    // Write the new snapshot first, then remove any older per-item rows.
+    // This avoids leaving the account with no cloud data if an insert fails.
+    const {error:upsertError}=await cloudClient
+      .from("life_admin_items")
+      .upsert({
+        id:snapshotId,
+        title:"Life Admin Snapshot",
+        data:snapshot,
+        updated_at:snapshot.exportDate
+      },{onConflict:"id"});
+    if(upsertError)throw upsertError;
+    const {error:deleteError}=await cloudClient
+      .from("life_admin_items")
+      .delete()
+      .eq("user_id",cloudUser.id)
+      .neq("id",snapshotId);
+    if(deleteError)throw deleteError;
+    toast("Local data replaced cloud snapshot");
     openSettings();
   }catch(err){
     console.error(err);
@@ -212,21 +232,35 @@ async function cloudPush(){
 async function cloudPull(){
   if(!cloudClient||!cloudUser){openCloudAuth();return}
   if(cloudBusy)return;
-  cloudBusy=true;toast("Pulling cloud items…");
+  cloudBusy=true;toast("Pulling cloud snapshot…");
   try{
-    const {data,error}=await cloudClient.from("life_admin_items").select("id,title,data,updated_at").order("updated_at",{ascending:true});
+    const {data,error}=await cloudClient
+      .from("life_admin_items")
+      .select("id,title,data,updated_at")
+      .eq("user_id",cloudUser.id)
+      .order("updated_at",{ascending:false})
+      .limit(1);
     if(error)throw error;
-    const localById=new Map(state.items.map(item=>[item.id,item]));
-    (data||[]).forEach(row=>{
-      const incoming=row.data&&typeof row.data==="object"?{...row.data}:null;
-      if(!incoming)return;
-      const local=localById.get(row.id);
-      if(local&&Array.isArray(local.attachments))incoming.attachments=local.attachments;
-      localById.set(row.id,incoming);
-    });
-    state.items=[...localById.values()];
+    const row=data?.[0];
+    const snapshot=row?.data&&typeof row.data==="object"?row.data:null;
+    if(!snapshot){
+      toast("No cloud snapshot found");
+      openSettings();
+      return;
+    }
+    // Pull is a true restore: local Life Admin items and calendar events are
+    // replaced by the cloud snapshot rather than merged with stale local data.
+    state.name=snapshot.name||"";
+    state.items=Array.isArray(snapshot.items)
+      ? snapshot.items.map(i=>({...i,attachments:Array.isArray(i.attachments)?i.attachments:[]}))
+      : [];
+    state.events=Array.isArray(snapshot.events)?snapshot.events:[];
+    state.settings={notifications:false,theme:"forest",...(snapshot.settings||{})};
+    applyTheme(state.settings.theme);
     save();
-    toast(`${(data||[]).length} cloud item${(data||[]).length===1?"":"s"} pulled`);
+    calendarView={month:startOfMonth(today()),selected:dateKey(today())};
+    renderCalendar();
+    toast("Cloud snapshot pulled — local data replaced");
     openSettings();
   }catch(err){
     console.error(err);
