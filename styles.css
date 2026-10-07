@@ -679,3 +679,51 @@ body{background:var(--v115-bg);color:var(--v115-text);letter-spacing:-.005em}
   .stats-grid,.home-tiles{padding-left:13px!important;padding-right:13px!important;margin-left:0!important;margin-right:0!important}
   .search-wrap,.category-strip,.filter-row,.list-head,.item-list,.calendar-day-head,.calendar-day-list{margin-left:13px!important;margin-right:13px!important}
 }
+
+
+/* =========================================================
+   V11.6 — COLOUR & PERSONALITY PASS
+   Visual-only layer. Cloud/auth/data logic intentionally untouched.
+   ========================================================= */
+:root{
+  --content-wash:color-mix(in srgb,var(--accent-soft) 32%,var(--bg));
+  --accent-glow:color-mix(in srgb,var(--accent) 18%,transparent);
+  --hero-gradient:linear-gradient(145deg,var(--hero),var(--hero-2));
+  --money-gradient:linear-gradient(145deg,var(--hero),var(--hero-2));
+}
+body{background:radial-gradient(circle at 92% 0%,color-mix(in srgb,var(--accent-soft) 55%,transparent) 0,transparent 34%),var(--bg)}
+.app-shell{background:transparent}
+.topbar .icon-btn{background:color-mix(in srgb,var(--card) 92%,var(--accent-soft))!important;border-color:color-mix(in srgb,var(--accent) 12%,var(--line))!important}
+.eyebrow{color:var(--accent)!important}
+.hero-card{background:var(--hero-gradient)!important;border-color:color-mix(in srgb,var(--hero-accent) 25%,transparent)!important;box-shadow:0 12px 32px color-mix(in srgb,var(--accent) 13%,transparent)!important}
+.hero-card .hero-label{color:var(--hero-accent)!important;opacity:.9!important}
+.home-sync-card{background:linear-gradient(135deg,var(--card),color-mix(in srgb,var(--accent-soft) 34%,var(--card)))!important;border-color:color-mix(in srgb,var(--accent) 13%,var(--line))!important}
+.home-sync-icon{color:var(--accent)!important;background:var(--accent-soft)!important}
+.stat-card{background:linear-gradient(145deg,var(--card),color-mix(in srgb,var(--accent-soft) 18%,var(--card)))!important}
+.stat-card .stat-icon.blue,.stat-card .stat-icon.income{background:var(--accent-soft)!important;color:var(--accent)!important}
+.section-head .text-btn{color:var(--accent)!important}
+.home-tile{background:linear-gradient(145deg,var(--card),color-mix(in srgb,var(--accent-soft) 22%,var(--card)))!important;border-color:color-mix(in srgb,var(--accent) 11%,var(--line))!important}
+.home-tile .tile-icon{background:var(--accent-soft)!important;color:var(--accent)!important}
+.agenda-card,.cashflow-card,.cost-card,.income-card,.money-card,.money-small{border-color:color-mix(in srgb,var(--accent) 8%,var(--line))!important}
+.agenda-dot{background:var(--accent)!important}
+.search-wrap{background:linear-gradient(145deg,var(--card),color-mix(in srgb,var(--accent-soft) 16%,var(--card)))!important;border-color:color-mix(in srgb,var(--accent) 10%,var(--line))!important}
+.category-chip.active,.filter-chip.active{background:var(--accent-soft)!important;color:var(--accent)!important;border-color:color-mix(in srgb,var(--accent) 22%,var(--line))!important}
+.item-icon{background:var(--accent-soft)!important;color:var(--accent)!important}
+.item.pinned{background:linear-gradient(90deg,color-mix(in srgb,var(--accent-soft) 30%,var(--card)),var(--card))!important}
+.money-hero{background:var(--money-gradient)!important;box-shadow:0 12px 32px color-mix(in srgb,var(--accent) 17%,transparent)!important}
+.money-detail-grid .money-small{background:linear-gradient(145deg,var(--card),color-mix(in srgb,var(--accent-soft) 18%,var(--card)))!important}
+.calendar-card{background:linear-gradient(180deg,var(--card),color-mix(in srgb,var(--accent-soft) 12%,var(--card)))!important}
+.cal-day.today .cal-number{background:var(--accent)!important}
+.cal-day.selected{box-shadow:inset 0 0 0 2px var(--accent-soft)!important;background:color-mix(in srgb,var(--accent-soft) 42%,var(--card))!important}
+.calendar-event-icon.appointment{background:var(--accent-soft)!important;color:var(--accent)!important}
+.calendar-add{background:linear-gradient(135deg,var(--accent-soft),color-mix(in srgb,var(--card) 70%,var(--accent-soft)))!important}
+.more-icon,.document-icon,.detail-icon{background:var(--accent-soft)!important;color:var(--accent)!important}
+.bottom-nav{background:color-mix(in srgb,var(--card) 91%,var(--accent-soft))!important;border-top-color:color-mix(in srgb,var(--accent) 10%,var(--line))!important}
+.bottom-nav .nav-item.active{color:var(--accent)!important;background:var(--accent-soft)!important}
+.bottom-nav .nav-add{background:linear-gradient(145deg,color-mix(in srgb,var(--accent) 78%,white),var(--accent))!important;box-shadow:0 10px 24px color-mix(in srgb,var(--accent) 30%,transparent),inset 0 1px 0 rgba(255,255,255,.32)!important}
+.primary{background:linear-gradient(145deg,color-mix(in srgb,var(--accent) 86%,white),var(--accent))!important;box-shadow:0 6px 16px color-mix(in srgb,var(--accent) 18%,transparent)!important}
+.theme-picker{display:flex;align-items:center;gap:10px;margin-top:10px;padding:8px;border:1px solid var(--line);border-radius:14px;background:var(--surface-soft)}
+.theme-picker select{flex:1;min-width:0;border:0;background:transparent;color:var(--text);font-weight:750;font-size:13px;outline:none;padding:5px 4px}
+.theme-swatch{width:34px;height:34px;border-radius:11px;background:linear-gradient(145deg,var(--accent),var(--hero-accent));box-shadow:0 4px 10px color-mix(in srgb,var(--accent) 22%,transparent);flex:none}
+.appearance-note{line-height:1.4}
+@media(prefers-reduced-motion:no-preference){.home-tile,.stat-card,.item,.money-small{transition:transform .16s ease,box-shadow .16s ease,background .2s ease}.home-tile:hover,.stat-card:hover{transform:translateY(-1px)}}
