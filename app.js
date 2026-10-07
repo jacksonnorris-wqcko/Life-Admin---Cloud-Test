@@ -1,6 +1,6 @@
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
-const APP_VERSION="10.7";
+const APP_VERSION="10.8";
 const APP_CHANNEL="Cloud Test";
 // ---------------- CLOUD LAB / SUPABASE ----------------
 // Browser-safe Supabase publishable key. Database access is protected by RLS.
@@ -181,9 +181,23 @@ function openCloudAuth(){
 
 async function cloudLogout(){
   if(!cloudClient)return;
-  const {error}=await cloudClient.auth.signOut();
+  // Sign out only this device/session. The cloud snapshot remains untouched
+  // so the same account can safely sign in elsewhere and retrieve its data.
+  const {error}=await cloudClient.auth.signOut({scope:"local"});
   if(error){toast(error.message);return}
-  cloudUser=null;openSettings();toast("Signed out");
+  try{
+    const theme=state.settings?.theme||"forest";
+    state={name:"",items:[],events:[],documents:[],settings:{notifications:false,theme}};
+    localStorage.removeItem(STORE);
+    await idbClearFiles();
+    save();
+  }catch(err){
+    console.error("Local sign-out cleanup failed",err);
+    toast("Signed out, but some local data could not be cleared");
+  }
+  cloudUser=null;
+  openSettings();
+  toast("Signed out — this device's data was cleared");
 }
 
 async function cloudPush(){
