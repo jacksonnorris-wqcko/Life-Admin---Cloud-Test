@@ -1070,3 +1070,54 @@ button{-webkit-tap-highlight-color:transparent;}
   .auth-brand{margin-bottom:20px}
   .auth-submit{min-height:50px!important}
 }
+
+
+/* =========================================================
+   V12.1.1 FAMILY BETA — ACCOUNT & SYNC
+   Dedicated top-level account surface; Settings stays focused
+   on app preferences and local data.
+   ========================================================= */
+.account-header-btn{position:relative!important;color:var(--accent)!important}
+.account-header-btn svg{width:20px!important;height:20px!important}
+.header-status-dot{position:absolute;right:7px;top:7px;width:7px;height:7px;border-radius:50%;background:#aab2bc;border:2px solid var(--card);box-sizing:content-box}
+.header-status-dot.connected{background:#24a36a}
+.header-status-dot.dirty{background:#d88924}
+.header-status-dot.offline{background:#aab2bc}
+.account-modal{max-width:560px;margin:0 auto}
+.account-modal-head{align-items:flex-end!important;margin-bottom:16px!important}
+.account-modal-head h3{margin-top:2px!important}
+.account-hero{display:flex;align-items:center;gap:13px;padding:16px;border:1px solid color-mix(in srgb,var(--accent) 12%,var(--line));background:linear-gradient(145deg,var(--card),color-mix(in srgb,var(--accent-soft) 48%,var(--card)));border-radius:20px;margin-bottom:10px}
+.account-hero-icon{width:48px;height:48px;border-radius:15px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);flex:none}
+.account-hero-icon svg{width:25px;height:25px}
+.account-hero-copy{min-width:0}
+.account-kicker{display:block;font-size:8px;font-weight:900;letter-spacing:.14em;color:var(--accent);margin-bottom:3px}
+.account-hero-copy strong{display:block;font-size:17px;letter-spacing:-.025em}
+.account-hero-copy p{font-size:10.5px;line-height:1.45;color:var(--muted);margin-top:3px;overflow-wrap:anywhere}
+.account-sync-card{padding:15px;border:1px solid var(--line);background:var(--card);border-radius:18px;box-shadow:0 3px 12px rgba(20,35,27,.025)}
+.account-sync-card.connected{border-color:color-mix(in srgb,var(--accent) 14%,var(--line))}
+.account-section-heading{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.account-section-heading h4{font-size:16px;letter-spacing:-.02em;margin:2px 0 0}
+.account-status-dot{width:9px;height:9px;border-radius:50%;background:#aab2bc;flex:none}
+.account-status-dot.connected{background:#24a36a;box-shadow:0 0 0 4px color-mix(in srgb,#24a36a 11%,transparent)}
+.account-status-dot.dirty{background:#d88924;box-shadow:0 0 0 4px color-mix(in srgb,#d88924 11%,transparent)}
+.account-sync-card>p{font-size:10.5px;line-height:1.5;color:var(--muted);margin:8px 0 13px;max-width:470px}
+.account-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.account-actions .primary{min-height:42px!important;border-radius:12px!important;padding:0 14px!important}
+.account-actions .primary svg{width:16px;height:16px;vertical-align:-3px;margin-right:4px}
+.account-connect-actions{display:grid;grid-template-columns:1.2fr 1fr;gap:8px;width:100%}
+.account-connect-actions button{min-height:44px;border-radius:12px;font-size:11px;font-weight:850}
+.account-benefits{display:grid;gap:1px;margin-top:10px;border:1px solid var(--line);border-radius:18px;overflow:hidden;background:var(--line)}
+.account-benefits>div{display:flex;align-items:flex-start;gap:10px;padding:12px;background:var(--card)}
+.benefit-icon{width:23px;height:23px;border-radius:8px;display:grid;place-items:center;flex:none;background:var(--accent-soft);color:var(--accent);font-size:12px;font-weight:900}
+.account-benefits b,.account-benefits small{display:block}
+.account-benefits b{font-size:11px}
+.account-benefits small{font-size:9.5px;line-height:1.4;color:var(--muted);margin-top:2px}
+.account-info-card{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding:12px 14px;border:1px solid var(--line);background:var(--surface-soft);border-radius:15px}
+.account-info-card strong{display:block;font-size:11px;margin-top:3px;overflow-wrap:anywhere}
+.account-info-check{width:25px;height:25px;border-radius:50%;display:grid;place-items:center;background:var(--good-soft);color:var(--good);font-weight:900;flex:none}
+.account-footnote{text-align:center;font-size:9px;line-height:1.45;color:var(--muted);margin:14px auto 0;max-width:440px}
+@media(max-width:600px){
+  .account-hero{padding:14px}
+  .account-hero-copy strong{font-size:16px}
+  .account-connect-actions{grid-template-columns:1fr 1fr}
+}

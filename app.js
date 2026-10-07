@@ -1,6 +1,6 @@
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
-const APP_VERSION="12.1.0";
+const APP_VERSION="12.1.1";
 const APP_CHANNEL="Beta";
 // ---------------- CLOUD SYNC / SUPABASE ----------------
 // Browser-safe Supabase publishable key. Database access is protected by RLS.
@@ -49,28 +49,36 @@ function cloudSafeItem(item){
   return copy;
 }
 
-function cloudStatusText(){
-  if(!cloudClient)return "Sync unavailable";
-  if(cloudUser){
-    const last=localStorage.getItem("lifeAdminLastCloudSync");
-    const when=last?` · Last synced ${new Date(last).toLocaleString([], {dateStyle:"short",timeStyle:"short"})}`:"";
-    return `Synced as ${esc(cloudUser.email||"signed-in user")}${when}`;
-  }
-  return "Not connected";
-}
-
 function refreshCloudSettings(){
   const status=$("#cloudStatus"), actions=$("#cloudActions");
+  const headerDot=$("#headerStatusDot"), accountDot=$("#accountStatusDot"), syncDesc=$("#accountSyncDescription");
   if(!status||!actions)return;
-  status.innerHTML=cloudStatusText();
-  if(cloudUser){
-    actions.innerHTML=`<button type="button" class="primary" id="cloudSync">☁️ Sync now</button>
+  const connected=!!cloudUser;
+  const dirty=localStorage.getItem("lifeAdminCloudDirty")==="1";
+  const last=localStorage.getItem("lifeAdminLastCloudSync");
+  [headerDot,accountDot].forEach(dot=>{
+    if(!dot)return;
+    dot.classList.toggle("connected",connected&&!dirty);
+    dot.classList.toggle("dirty",connected&&dirty);
+    dot.classList.toggle("offline",!connected);
+  });
+  if(connected){
+    status.textContent=dirty?"Changes not synced":"Up to date";
+    if(syncDesc){
+      syncDesc.textContent=dirty
+        ?"You have changes on this device waiting to be synced to your other devices."
+        :(last?`Everything is synced. Last synced ${new Date(last).toLocaleString([], {dateStyle:"medium",timeStyle:"short"})}.`:"Your account is ready to sync across devices.");
+    }
+    actions.innerHTML=`<button type="button" class="primary" id="cloudSync">${icons.cloud} ${dirty?"Sync changes":"Sync now"}</button>
       <button type="button" class="text-btn" id="cloudLogout">Sign out</button>`;
     $("#cloudSync").onclick=cloudSync;
     $("#cloudLogout").onclick=cloudLogout;
   }else{
-    actions.innerHTML=`<button type="button" class="text-btn" id="cloudConnect">Connect</button>`;
-    $("#cloudConnect").onclick=()=>openCloudAuth();
+    status.textContent="Not connected";
+    if(syncDesc)syncDesc.textContent="Create an account or sign in to keep your items and calendar available across your devices.";
+    actions.innerHTML=`<div class="account-connect-actions"><button type="button" class="primary" id="cloudCreate">Create account</button><button type="button" class="secondary" id="cloudSignIn">Sign in</button></div>`;
+    $("#cloudCreate").onclick=()=>openCloudAuth("signup");
+    $("#cloudSignIn").onclick=()=>openCloudAuth("signin");
   }
 }
 
@@ -167,7 +175,7 @@ function openCloudAuth(mode="signin"){
         const {data,error}=await cloudClient.auth.signUp({email:email.value.trim(),password:password.value,options:{emailRedirectTo:redirectTo}});
         if(error){showCloudError("Account creation",error);return}
         if(data?.session){
-          cloudUser=data.user;closeModal();openSettings();render();toast("Account created — you're signed in");
+          cloudUser=data.user;closeModal();openAccount();render();toast("Account created — you're signed in");
         }else{
           msg.textContent="Account created. Check your email to confirm it, then come back and sign in.";
           $("#cloudSubmit").textContent="Sign in after confirmation";
@@ -184,7 +192,7 @@ function openCloudAuth(mode="signin"){
             applyCloudSnapshot(cloud.snapshot);
             localStorage.setItem("lifeAdminLastCloudSync",cloud.updatedAt||new Date().toISOString());
             localStorage.removeItem("lifeAdminCloudDirty");
-            closeModal();openSettings();render();toast("Welcome back — latest data loaded");
+            closeModal();openAccount();render();toast("Welcome back — latest data loaded");
             refreshCloudSettings();
             return;
           }
@@ -192,7 +200,7 @@ function openCloudAuth(mode="signin"){
         }else{
           toast("Signed in — local changes are waiting to sync");
         }
-        closeModal();openSettings();refreshCloudSettings();
+        closeModal();openAccount();refreshCloudSettings();
       }
     }catch(err){showCloudError(signup?"Account creation":"Sign in",err)}
     finally{
@@ -225,7 +233,7 @@ async function cloudLogout(){
     toast("Signed out, but some local data could not be cleared");
   }
   cloudUser=null;
-  openSettings();
+  openAccount();
   toast("Signed out — this device's data was cleared");
 }
 
@@ -382,6 +390,7 @@ search:`<svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.2"/><path d="m
 close:`<svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg>`,
 add:`<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>`,
 grid:`<svg viewBox="0 0 24 24"><rect x="4" y="4" width="6" height="6" rx="1"/><rect x="14" y="4" width="6" height="6" rx="1"/><rect x="4" y="14" width="6" height="6" rx="1"/><rect x="14" y="14" width="6" height="6" rx="1"/></svg>`,
+cloud:`<svg viewBox="0 0 24 24"><path d="M7.5 18.5h9a4 4 0 0 0 .6-7.95A5.5 5.5 0 0 0 6.5 9.7a4.5 4.5 0 0 0 1 8.8Z"/></svg>`,
 items:`<svg viewBox="0 0 24 24"><rect x="5" y="3.5" width="14" height="17" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>`,
 chart:`<svg viewBox="0 0 24 24"><path d="M5 20V11M12 20V5M19 20v-8"/></svg>`,
 income:`<svg viewBox="0 0 24 24"><path d="M12 20V4M7 9l5-5 5 5"/><path d="M5 20h14"/></svg>`,
@@ -607,32 +616,6 @@ function eventFormHtml(e={}){const isEdit=!!e.id;return `<div class="modal-heade
 function openCalendarEvent(id){const e=(state.events||[]).find(x=>x.id===id);if(!e)return;openModal(eventFormHtml(e));bindCalendarForm(e)}
 function openCalendarAdd(){openModal(eventFormHtml({date:calendarView.selected||dateKey(today())}));bindCalendarForm()}
 function bindCalendarForm(existing){$("#close").onclick=closeModal;$("#cancel").onclick=closeModal;$("#calendarForm").onsubmit=ev=>{ev.preventDefault();const data={title:$("#eventTitle").value.trim(),type:$("#eventType").value,date:$("#eventDate").value,time:$("#eventTime").value,repeat:$("#eventRepeat").value,notes:$("#eventNotes").value.trim()};if(!data.title||!data.date)return;if(existing)Object.assign(existing,data);else{state.events=state.events||[];state.events.push({id:uid(),...data,createdAt:new Date().toISOString()})}calendarView.month=dateObj(data.date);calendarView.selected=data.date;closeModal();save();toast(existing?"Event updated":"Event added");renderCalendar()};if(existing)$("#deleteEvent").onclick=()=>{if(confirm("Delete this calendar event?")){state.events=state.events.filter(x=>x.id!==existing.id);closeModal();save();renderCalendar();toast("Event deleted")}}}
-function renderHomeSyncStatus(){
-  const card=$("#homeSyncCard"),icon=$("#homeSyncIcon"),title=$("#homeSyncTitle"),detail=$("#homeSyncDetail");
-  if(!card||!icon||!title||!detail)return;
-  const connected=!!cloudUser;
-  const dirty=localStorage.getItem("lifeAdminCloudDirty")==="1";
-  const last=localStorage.getItem("lifeAdminLastCloudSync");
-  card.classList.toggle("sync-dirty",connected&&dirty);
-  card.classList.toggle("sync-ok",connected&&!dirty);
-  card.classList.toggle("sync-offline",!connected);
-  if(!connected){
-    icon.textContent="☁️";
-    title.textContent="Cloud not connected";
-    detail.textContent="Connect to sync your Life Admin across devices.";
-    return;
-  }
-  if(dirty){
-    icon.textContent="🟠";
-    title.textContent="Changes not synced";
-    detail.textContent="Tap to sync your latest changes.";
-    return;
-  }
-  icon.textContent="☁️";
-  title.textContent="Up to date";
-  detail.textContent=last?`Last synced ${new Date(last).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"})}`:"Ready to sync";
-}
-
 function render(){
   const incomingChanged=normalizeIncomingItems();
   if(incomingChanged)localStorage.setItem(STORE,JSON.stringify(state));
@@ -662,7 +645,6 @@ function render(){
   const attentionSet=new Set([...overdue,...active.filter(i=>daysUntil(i.due)>=0&&daysUntil(i.due)<=ATTENTION_DAYS)].map(i=>i.id));
   const attentionCount=attentionSet.size;
   const hasItems=state.items.length>0;
-  renderHomeSyncStatus();
   $("#scoreText").textContent=attentionCount?"Needs attention":"All clear";
   $("#scoreDetail").textContent=attentionCount?`${attentionCount} ${attentionCount===1?"item needs":"items need"} your attention · ${overdue.length} overdue · ${active.filter(i=>daysUntil(i.due)>=0&&daysUntil(i.due)<=ATTENTION_DAYS).length} due today`:hasItems?"Nothing needs your attention right now.":"Add something with the + button when you need to.";
   const badge=$("#statusBadge");
@@ -740,15 +722,34 @@ function eventOccurrenceDates(e,start,end){
   return out;
 }
 function renderList(list){const el=$("#itemList");if(!list.length){el.innerHTML=`<div class="empty">${view.search?"No items match your search.":view.filter==="attention"?"No upcoming items. Nice work.":"Nothing to show here."}</div>`;return}el.innerHTML=list.map(i=>{const d=daysUntil(i.due),c=cats[i.category]||cats.other,st=status(i),date=i.completed?`Completed ${formatDate(i.completedAt||i.due)}`:d<0?`${Math.abs(d)}d late`:d===0?"Today":d===1?"Tomorrow":formatDate(i.due);return `<div class="item ${st} ${i.pinned?"pinned":""}" data-id="${i.id}"><button type="button" class="check-button" data-complete="${i.id}" aria-label="${i.completed?"Reopen":"Complete"}">${i.completed?icons.check:""}</button><button type="button" class="item-icon" data-open="${i.id}" aria-label="Open ${esc(i.title)}">${iconFor(i.category)}</button><button type="button" class="item-main" data-open="${i.id}"><div class="item-title">${i.pinned?`<span class="pin-mark">★</span> `:""}${priorityRank(i.priority)<2?`<span class="priority-pill ${i.priority}">${priorityLabel(i.priority)}</span> `:""}${esc(i.title)}</div><div class="item-meta"><span>${esc(c.name)}</span>${i.repeat&&i.repeat!=="Doesn't repeat"?`<span>· ${icons.repeat} ${esc(i.repeat)}</span>`:""}${Number(i.cost)>0?`<span class="${i.moneyType==="income"?"income-text":""}">· ${i.moneyType==="income"?"+":"-"}${money(i.cost)}</span>`:""}</div></button><button type="button" class="item-date" data-open="${i.id}"><div class="date-label">${i.completed?"Done":d<0?"Overdue":d<=14?"Coming up":"Due"}</div><div class="date-value">${date}</div></button></div>`}).join("")}
+function openAccount(){
+  openModal(`<div class="account-modal">
+    <div class="modal-header account-modal-head"><div><span class="mini-label">LIFE ADMIN</span><h3>Account & Sync</h3></div><button type="button" class="close" id="close">${icons.close}</button></div>
+    <section class="account-hero">
+      <div class="account-hero-icon" data-icon="${cloudUser?"cloud":"personal"}"></div>
+      <div class="account-hero-copy"><span class="account-kicker">${cloudUser?"CONNECTED":"KEEP YOUR LIFE IN SYNC"}</span><strong>${cloudUser?"Your account is connected":"Sync Life Admin across your devices"}</strong><p>${cloudUser?esc(cloudUser.email||"Signed-in account"):"Create an account or sign in to keep your items and calendar available across your devices."}</p></div>
+    </section>
+    <section class="account-sync-card" id="accountSyncCard">
+      <div class="account-section-heading"><div><span class="mini-label">CLOUD SYNC</span><h4 id="cloudStatus">Loading cloud status…</h4></div><span class="account-status-dot" id="accountStatusDot"></span></div>
+      <p id="accountSyncDescription">Your Life Admin data stays private to your account. Documents remain on this device for now.</p>
+      <div id="cloudActions" class="account-actions"></div>
+    </section>
+    ${!cloudUser?`<div class="account-benefits"><div><span class="benefit-icon">✓</span><span><b>Use it on more than one device</b><small>Keep your Life Admin in step between phone and computer.</small></span></div><div><span class="benefit-icon">✓</span><span><b>Keep your data protected</b><small>Your account controls access to your synced Life Admin data.</small></span></div></div>`:`<section class="account-info-card"><div><span class="mini-label">SIGNED IN AS</span><strong>${esc(cloudUser.email||"Signed-in account")}</strong></div><span class="account-info-check">✓</span></section>`}
+    <p class="account-footnote">Documents stay on this device for now. You can still use Life Admin without an account.</p>
+  </div>`);
+  $("#close").onclick=closeModal;
+  refreshCloudSettings();
+  installIcons();
+  const syncCard=$("#accountSyncCard");
+  if(syncCard)syncCard.classList.toggle("connected",!!cloudUser);
+  const logout=$("#cloudLogout");
+  if(logout)logout.onclick=cloudLogout;
+}
+
 function openSettings(){
   const theme=state.settings.theme||"forest";
   const themeOptions=Object.entries(THEMES).map(([key,t])=>`<option value="${key}" ${theme===key?"selected":""}>${t.name} — ${t.meta}</option>`).join("");
   openModal(`<div class="modal-header"><h3>Settings</h3><button type="button" class="close" id="close">${icons.close}</button></div>
-    <div class="setting-row cloud-setting" style="display:block">
-      <div><b>Sync</b><small id="cloudStatus">Loading cloud status…</small></div>
-      <div id="cloudActions" class="cloud-actions"></div>
-      <div class="appearance-note">Sync keeps your Life Admin items and calendar up to date across your devices. Documents stay on this device for now.</div>
-    </div>
     <div class="setting-row"><div><b>Your name</b><small>Used on the home screen</small></div><button type="button" class="text-btn" id="nameEdit">${state.name?esc(state.name):"Add name"}</button></div>
     <div class="setting-row"><div><b>Notifications</b><small>Request browser permission where supported</small></div><button type="button" class="toggle ${state.settings.notifications?"on":""}" id="notify"><i></i></button></div>
     <div class="setting-row" style="display:block"><div><b>Appearance</b><small>Choose a colour scheme for Life Admin</small></div><div class="theme-picker"><span class="theme-swatch" id="themeSwatch"></span><select id="themeSelect" aria-label="Life Admin theme">${themeOptions}</select></div><div class="appearance-note">Your choice is saved on this device and applies instantly.</div></div>
@@ -756,7 +757,6 @@ function openSettings(){
     <div class="setting-row"><div><b>Data</b><small>${state.items.length} item${state.items.length===1?"":"s"} stored locally</small></div><button type="button" class="text-btn" id="clearData">Clear all</button></div>
     <p style="font-size:11px;color:var(--muted);margin-top:18px">Life Admin V${APP_VERSION} · ${APP_CHANNEL}</p>`);
   $("#close").onclick=closeModal;
-  refreshCloudSettings();
   const themeSelect=$("#themeSelect"); if(themeSelect){themeSelect.onchange=()=>{state.settings.theme=themeSelect.value;applyTheme(state.settings.theme);save();openSettings()};}
   $("#nameEdit").onclick=()=>{const n=prompt("What should we call you?",state.name);if(n!==null){state.name=n.trim();save();openSettings()}};
   $("#notify").onclick=async()=>{if("Notification" in window){const p=await Notification.requestPermission();state.settings.notifications=p==="granted";save();openSettings()}else toast("Notifications aren't supported here")};
@@ -824,7 +824,6 @@ function bindGlobal(){document.addEventListener("keydown",e=>{if((e.key==="Enter
   const homeAll=e.target.closest("#homeViewAll");if(homeAll){switchTab("items");return}
   const homeMoney=e.target.closest("#homeMoney");if(homeMoney){switchTab("money");return}
   const homeIncome=e.target.closest("#homeIncome");if(homeIncome){switchTab("money");return}
-  const homeSync=e.target.closest("#homeSyncCard");if(homeSync){if(cloudUser)cloudSync();else openCloudAuth();return}
   const calDate=e.target.closest("[data-cal-date]");if(calDate){calendarView.selected=calDate.dataset.calDate;const d=dateObj(calendarView.selected);calendarView.month=new Date(d.getFullYear(),d.getMonth(),1);renderCalendar();return}
   const calEvent=e.target.closest("[data-calendar-event]");if(calEvent){openCalendarEvent(calEvent.dataset.calendarEvent);return}
   if(e.target.closest("#calendarPrev")){calendarView.month=new Date(calendarView.month.getFullYear(),calendarView.month.getMonth()-1,1);calendarView.selected=dateKey(calendarView.month);renderCalendar();return}
@@ -833,6 +832,7 @@ function bindGlobal(){document.addEventListener("keydown",e=>{if((e.key==="Enter
   if(e.target.closest("#calendarAdd")){openCalendarAdd();return}
   const nav=e.target.closest(".nav-item");if(nav){switchTab(nav.dataset.tab);return}
   const add=e.target.closest("#navAdd");if(add){openAdd();return}
+  if(e.target.closest("#accountBtn")){openAccount();return}
   if(e.target.closest("#settingsBtn")){openSettings();return}
   if(e.target.closest("#moreHeaderBtn")){switchTab("more");return}
   if(e.target.closest("#settingsMenuBtn")){openSettings();return}
