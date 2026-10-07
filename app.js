@@ -1,6 +1,6 @@
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
-const APP_VERSION="12.1.1";
+const APP_VERSION="12.1.2";
 const APP_CHANNEL="Beta";
 // ---------------- CLOUD SYNC / SUPABASE ----------------
 // Browser-safe Supabase publishable key. Database access is protected by RLS.
@@ -210,7 +210,6 @@ function openCloudAuth(mode="signin"){
   };
   setMode(currentMode,false);
   installIcons();
-  setTimeout(()=>email.focus(),100);
 }
 async function cloudLogout(){
   if(!cloudClient)return;
@@ -764,8 +763,71 @@ function openSettings(){
   $("#import").onclick=()=>{$("#fileInput").accept=".json,application/json";$("#fileInput").onchange=importData;$("#fileInput").click()};
   $("#clearData").onclick=()=>{if(confirm("Delete every Life Admin item and document? This cannot be undone.")){const theme=state.settings.theme||"forest";state={name:state.name,items:[],events:[],documents:[],settings:{notifications:false,theme}};idbClearFiles();save();closeModal()}};
 }
-function openModal(html){$("#modal").innerHTML=html;$("#modalBackdrop").classList.remove("hidden");installIcons()}
-function closeModal(){$("#modalBackdrop").classList.add("hidden")}
+function updateModalViewport(){
+  const backdrop=$("#modalBackdrop");
+  const vv=window.visualViewport;
+  if(!backdrop||backdrop.classList.contains("hidden")||!vv)return;
+  const viewportHeight=Math.max(320,Math.round(vv.height));
+  const viewportTop=Math.max(0,Math.round(vv.offsetTop));
+  const viewportLeft=Math.max(0,Math.round(vv.offsetLeft));
+  const viewportWidth=Math.max(320,Math.round(vv.width));
+  const layoutHeight=window.innerHeight||viewportHeight;
+  const keyboardOpen=(layoutHeight-viewportHeight)>120;
+  backdrop.style.setProperty("--visual-vh",`${viewportHeight}px`);
+  if(keyboardOpen){
+    backdrop.classList.add("keyboard-open");
+    backdrop.style.top=`${viewportTop}px`;
+    backdrop.style.left=`${viewportLeft}px`;
+    backdrop.style.width=`${viewportWidth}px`;
+    backdrop.style.height=`${viewportHeight}px`;
+    backdrop.style.right="auto";
+    backdrop.style.bottom="auto";
+  }else{
+    backdrop.classList.remove("keyboard-open");
+    backdrop.style.removeProperty("top");
+    backdrop.style.removeProperty("left");
+    backdrop.style.removeProperty("width");
+    backdrop.style.removeProperty("height");
+    backdrop.style.removeProperty("right");
+    backdrop.style.removeProperty("bottom");
+  }
+}
+function ensureFocusedFieldVisible(el){
+  if(!el)return;
+  const modal=$("#modal");
+  const backdrop=$("#modalBackdrop");
+  const vv=window.visualViewport;
+  if(!modal||!backdrop)return;
+  setTimeout(()=>{
+    updateModalViewport();
+    const rect=el.getBoundingClientRect();
+    const bottomLimit=vv?Math.min(vv.height,window.innerHeight||vv.height)-24:window.innerHeight-24;
+    const topLimit=vv?Math.max(12,vv.offsetTop+12):12;
+    if(rect.bottom>bottomLimit||rect.top<topLimit){
+      el.scrollIntoView({block:"center",inline:"nearest",behavior:"smooth"});
+      setTimeout(()=>{
+        if(modal.scrollHeight>modal.clientHeight){
+          const r=el.getBoundingClientRect();
+          const m=modal.getBoundingClientRect();
+          const target=modal.scrollTop+(r.top-m.top)-(modal.clientHeight-r.height)/2;
+          modal.scrollTo({top:Math.max(0,target),behavior:"smooth"});
+        }
+      },80);
+    }
+  },70);
+}
+function initMobileKeyboardHandling(){
+  if(!window.visualViewport)return;
+  const refresh=()=>updateModalViewport();
+  window.visualViewport.addEventListener("resize",refresh,{passive:true});
+  window.visualViewport.addEventListener("scroll",refresh,{passive:true});
+  document.addEventListener("focusin",e=>{
+    const el=e.target;
+    if(el&&el.matches("input,select,textarea")&&el.closest("#modal"))ensureFocusedFieldVisible(el);
+  });
+}
+function openModal(html){$("#modal").innerHTML=html;$("#modalBackdrop").classList.remove("hidden");updateModalViewport();installIcons()}
+function closeModal(){const backdrop=$("#modalBackdrop");backdrop.classList.add("hidden");backdrop.classList.remove("keyboard-open");backdrop.removeAttribute("style")}
 function categoryOptions(selected){return Object.entries(cats).map(([k,v])=>`<option value="${k}" ${k===selected?"selected":""}>${v.name}</option>`).join("")}
 function repeatOptions(selected){return ["Doesn't repeat","Weekly","Fortnightly","Monthly","Every 3 months","Every 6 months","Yearly"].map(x=>`<option ${x===selected?"selected":""}>${x}</option>`).join("")}
 function formHtml(item={},preset="") {const isEdit=!!item.id,due=item.due||iso(today()),p=preset?preset:"";return `<div class="modal-header"><h3>${isEdit?"Edit item":"Add life admin"}</h3><button type="button" class="close" id="close">${icons.close}</button></div>${!isEdit&&!p?`<div class="quick-grid" style="margin-bottom:15px"><button type="button" class="quick-choice" data-preset="bill">${icons.money}<span>Bill</span></button><button type="button" class="quick-choice" data-preset="payday">${icons.income}<span>Payday</span></button><button type="button" class="quick-choice" data-preset="car">${icons.car}<span>Car</span></button><button type="button" class="quick-choice" data-preset="reminder">${icons.calendar}<span>Reminder</span></button></div>`:""}<form id="itemForm"><div class="form-grid"><div class="field"><label>What needs remembering?</label><input id="title" required maxlength="100" value="${esc(item.title)}" placeholder="e.g. Car registration"></div><div class="field"><label>Category</label><select id="category">${categoryOptions(item.category||((p==="payday")?"income":p==="car"?"car":"home"))}</select></div><div class="field"><label>Due date</label><input id="due" type="date" required value="${due}"></div><div class="field"><label>Repeat</label><select id="repeat">${repeatOptions(item.repeat||"Doesn't repeat")}</select></div><div class="field"><label>Priority</label><select id="priority"><option value="urgent" ${item.priority==="urgent"?"selected":""}>Urgent</option><option value="high" ${item.priority==="high"?"selected":""}>Important</option><option value="normal" ${(!item.priority||item.priority==="normal")?"selected":""}>Normal</option><option value="low" ${item.priority==="low"?"selected":""}>Low</option></select></div><div class="field"><label>Money <span class="muted">(optional)</span></label><select id="moneyType"><option value="expense" ${item.moneyType!=="income"?"selected":""}>Outgoing — this costs me money</option><option value="income" ${item.moneyType==="income"?"selected":""}>Incoming — this pays me money</option></select></div><div class="field"><label id="moneyLabel">${item.moneyType==="income"?"Amount coming in":"Amount going out"}</label><input id="cost" type="number" min="0" step="0.01" value="${Number(item.cost||0)||""}" placeholder="0.00"></div><div class="field"><label>Provider / company <span class="muted">(optional)</span></label><input id="provider" maxlength="80" value="${esc(item.provider)}" placeholder="e.g. NRMA"></div><div class="field"><label>Notes <span class="muted">(optional)</span></label><textarea id="notes" maxlength="500" placeholder="Anything worth remembering...">${esc(item.notes)}</textarea></div></div><div class="form-actions">${isEdit?`<button type="button" class="danger-btn" id="delete">${icons.trash} Delete</button>`:""}<button type="button" class="secondary" id="cancel">Cancel</button><button type="submit" class="primary">Save ${isEdit?"changes":"item"}</button></div></form>`}
@@ -854,5 +916,5 @@ async function registerAppUpdater(){
     console.warn("Life Admin updater unavailable",error);
   }
 }
-function boot(){applyTheme(state.settings?.theme||"forest");installIcons();initTabs();bindGlobal();render();updateGreeting();setInterval(updateGreeting,60000);registerAppUpdater();cloudInit()}
+function boot(){applyTheme(state.settings?.theme||"forest");installIcons();initTabs();initMobileKeyboardHandling();bindGlobal();render();updateGreeting();setInterval(updateGreeting,60000);registerAppUpdater();cloudInit()}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot,{once:true});else boot();
