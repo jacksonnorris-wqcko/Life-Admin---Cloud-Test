@@ -1,7 +1,7 @@
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
-const APP_VERSION="10.0";
-const APP_CHANNEL="Alpha";
+const APP_VERSION="10.2";
+const APP_CHANNEL="Cloud Test";
 // ---------------- CLOUD LAB / SUPABASE ----------------
 // Browser-safe Supabase publishable key. Database access is protected by RLS.
 const SUPABASE_URL="https://cfpfcwtozxhvqclovupm.supabase.co";
@@ -13,15 +13,21 @@ let cloudUser=null;
 let cloudBusy=false;
 
 async function cloudInit(){
-  if(!cloudClient)return;
+  if(!cloudClient){
+    console.warn("Supabase client unavailable: CDN script did not initialise.");
+    return;
+  }
   try{
-    const {data}=await cloudClient.auth.getSession();
+    const {data,error}=await cloudClient.auth.getSession();
+    if(error) throw error;
     cloudUser=data?.session?.user||null;
     cloudClient.auth.onAuthStateChange((_event,session)=>{
       cloudUser=session?.user||null;
       if(document.querySelector("#cloudStatus")) refreshCloudSettings();
     });
-  }catch(err){console.warn("Cloud auth init failed",err)}
+  }catch(err){
+    console.warn("Cloud auth init failed",err);
+  }
 }
 
 function cloudSafeItem(item){
@@ -63,28 +69,52 @@ function openCloudAuth(){
     <div class="form-actions">
       <button type="button" class="secondary" id="cloudSignup">Create account</button>
       <button type="button" class="primary" id="cloudSignin">Sign in</button>
+      <button type="button" class="text-btn" id="cloudTest">Test connection</button>
     </div>
     <p id="cloudAuthMessage" class="cloud-message"></p>`);
   $("#close").onclick=closeModal;
   const email=$("#cloudEmail"),password=$("#cloudPassword"),msg=$("#cloudAuthMessage");
-  const validate=()=>{if(!email.value.trim()||!password.value){msg.textContent="Enter your email and password.";return false}if(password.value.length<6){msg.textContent="Password must be at least 6 characters.";return false}return true};
+  const validate=()=>{
+    if(!cloudClient){msg.textContent="Cloud connection isn't available. Please reload the Cloud Test app.";return false}
+    if(!email.value.trim()||!password.value){msg.textContent="Enter your email and password.";return false}
+    if(password.value.length<6){msg.textContent="Password must be at least 6 characters.";return false}
+    return true;
+  };
+  const showCloudError=(action,error)=>{
+    console.error(`Cloud ${action} failed`,error);
+    const detail=error?.message||String(error||"Unknown error");
+    msg.textContent=`${action} failed: ${detail}`;
+  };
   $("#cloudSignup").onclick=async()=>{
     if(!validate())return;
     msg.textContent="Creating account…";
-    const {data,error}=await cloudClient.auth.signUp({email:email.value.trim(),password:password.value});
-    if(error){msg.textContent=error.message;return}
-    if(data?.session){
-      cloudUser=data.user;closeModal();openSettings();toast("Cloud account created");
-    }else{
-      msg.textContent="Account created. Check your email to confirm it, then come back and sign in.";
-    }
+    try{
+      const {data,error}=await cloudClient.auth.signUp({email:email.value.trim(),password:password.value});
+      if(error){showCloudError("Account creation",error);return}
+      if(data?.session){
+        cloudUser=data.user;closeModal();openSettings();toast("Cloud account created");
+      }else{
+        msg.textContent="Account created. Check your email to confirm it, then come back and sign in.";
+      }
+    }catch(err){showCloudError("Account creation",err)}
   };
   $("#cloudSignin").onclick=async()=>{
     if(!validate())return;
     msg.textContent="Signing in…";
-    const {data,error}=await cloudClient.auth.signInWithPassword({email:email.value.trim(),password:password.value});
-    if(error){msg.textContent=error.message;return}
-    cloudUser=data.user;closeModal();openSettings();toast("Connected to cloud");
+    try{
+      const {data,error}=await cloudClient.auth.signInWithPassword({email:email.value.trim(),password:password.value});
+      if(error){showCloudError("Sign in",error);return}
+      cloudUser=data.user;closeModal();openSettings();toast("Connected to cloud");
+    }catch(err){showCloudError("Sign in",err)}
+  };
+  $("#cloudTest").onclick=async()=>{
+    if(!cloudClient){msg.textContent="Cloud client did not load. Reload the app and try again.";return}
+    msg.textContent="Testing Supabase connection…";
+    try{
+      const {error}=await cloudClient.auth.getSession();
+      if(error)throw error;
+      msg.textContent="Supabase connection is working. You can create the test account now.";
+    }catch(err){showCloudError("Connection test",err)}
   };
   installIcons();
 }
@@ -569,5 +599,5 @@ function bindGlobal(){document.addEventListener("keydown",e=>{if((e.key==="Enter
   const docDelete=e.target.closest("[data-doc-delete]");if(docDelete){deleteDocument(docDelete.dataset.docDelete);return}
   if(e.target.closest("#documentsBtn")){openDocuments();return}
 });$("#searchInput").addEventListener("input",e=>{view.search=e.target.value;$("#clearSearch").classList.toggle("hidden",!view.search);if(view.search)view.filter="all";render()})}
-function boot(){applyTheme(state.settings?.theme||"forest");installIcons();initTabs();bindGlobal();render();updateGreeting();setInterval(updateGreeting,60000)}
+function boot(){applyTheme(state.settings?.theme||"forest");installIcons();initTabs();bindGlobal();render();updateGreeting();setInterval(updateGreeting,60000);cloudInit()}
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot,{once:true});else boot();
