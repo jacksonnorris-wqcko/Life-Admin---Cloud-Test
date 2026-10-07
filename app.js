@@ -1,6 +1,6 @@
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
-const APP_VERSION="10.4";
+const APP_VERSION="10.5";
 const APP_CHANNEL="Cloud Test";
 // ---------------- CLOUD LAB / SUPABASE ----------------
 // Browser-safe Supabase publishable key. Database access is protected by RLS.
@@ -621,6 +621,34 @@ function openDetail(id){const i=state.items.find(x=>x.id===id);if(!i)return;cons
 function toggleComplete(id){const i=state.items.find(x=>x.id===id);if(!i)return;if(!i.completed){i.completed=true;i.completedAt=iso(today());const next=nextDue(i);if(next)state.items.push({...i,id:uid(),due:next,completed:false,completedAt:null,attachments:[],seriesId:i.seriesId||uid()})}else{i.completed=false;i.completedAt=null}save();toast(i.completed?"Completed":"Reopened")}
 function snooze(id,days){const i=state.items.find(x=>x.id===id);if(!i)return;const d=dateObj(i.due);d.setDate(d.getDate()+days);i.due=iso(d);save();closeModal();toast(`Moved ${days} day${days===1?"":"s"}`)}
 async function attachFile(id){openDocumentUpload(id)}
+
+function exportData(){
+  try{
+    const backup={
+      exportDate:new Date().toISOString(),
+      appVersion:APP_VERSION,
+      name:state.name||"",
+      items:Array.isArray(state.items)?state.items:[],
+      events:Array.isArray(state.events)?state.events:[],
+      documents:Array.isArray(state.documents)?state.documents:[],
+      settings:state.settings||{}
+    };
+    const blob=new Blob([JSON.stringify(backup,null,2)],{type:"application/json"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    const stamp=new Date().toISOString().slice(0,10);
+    a.href=url;
+    a.download=`life-admin-backup-${stamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+    toast("Backup exported");
+  }catch(err){
+    console.error("Export failed",err);
+    toast(`Export failed: ${err.message||err}`);
+  }
+}
 
 function importData(e){const f=e.target.files?.[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const x=JSON.parse(r.result);if(!Array.isArray(x.items))throw Error();state={name:x.name||"",items:x.items.map(i=>({...i,pinned:!!i.pinned,priority:i.priority||"normal",seriesId:i.seriesId||null,attachments:i.attachments||[],completed:!!i.completed})),events:Array.isArray(x.events)?x.events:[],documents:Array.isArray(x.documents)?x.documents:[],settings:{notifications:false,theme:"forest",...(x.settings||{})}};applyTheme(state.settings.theme);save();closeModal();toast("Backup restored")}catch{alert("That file isn't a valid Life Admin backup.")}};r.readAsText(f)}
 function toast(msg){const t=document.createElement("div");t.className="toast";t.textContent=msg;document.body.appendChild(t);requestAnimationFrame(()=>t.classList.add("show"));setTimeout(()=>{t.classList.remove("show");setTimeout(()=>t.remove(),220)},1800)}
