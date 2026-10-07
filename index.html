@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f4efe7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Life Admin</title>
+<link rel="icon" type="image/png" sizes="192x192" href="life-admin-icon-v9.6-192.png">
+<link rel="apple-touch-icon" href="life-admin-icon-v9.6-apple.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="stylesheet" href="styles.css?v=10000">
+<style>svg{fill:none!important;stroke:currentColor!important;stroke-width:1.8!important;stroke-linecap:round!important;stroke-linejoin:round!important;vector-effect:non-scaling-stroke!important}svg circle,svg rect{fill:none!important}</style>
+</head>
+<body>
+<div class="app-shell">
+<header class="topbar">
+  <div class="brand-lockup"><img class="brand-mark" src="life-admin-icon-v9.6-512.png" alt="Life Admin"><div><div class="eyebrow" id="tabEyebrow">LIFE ADMIN</div><h1 id="pageTitle">Good morning<span id="userName"></span></h1></div></div>
+  <div class="header-actions"><button type="button" class="icon-btn" id="settingsBtn" aria-label="Settings" data-icon="settings"></button><button type="button" class="icon-btn" id="moreHeaderBtn" aria-label="More" data-icon="grid"></button></div>
+</header>
+<main>
+  <!-- HOME -->
+  <div class="tab-page" data-tab-panel="home">
+    <section class="hero-card compact-hero" role="button" tabindex="0" data-filter="attention" aria-label="Open items needing attention">
+      <div class="hero-top"><div><span class="hero-label">LIFE ADMIN STATUS</span><div class="score-row"><strong id="scoreText">All clear</strong></div></div><div class="status-badge" id="statusBadge" aria-hidden="true">✓</div></div>
+      <p id="scoreDetail">Nothing needs your attention right now.</p>
+    </section>
+    <section class="stats-grid compact-stats">
+      <button type="button" class="stat-card" data-filter="overdue"><span class="stat-icon danger" data-icon="warning"></span><b id="overdueCount">0</b><small>Overdue</small></button>
+      <button type="button" class="stat-card" data-filter="soon"><span class="stat-icon warning" data-icon="calendar"></span><b id="soonCount">0</b><small>Due soon</small></button>
+      <button type="button" class="stat-card" data-filter="completed"><span class="stat-icon good" data-icon="check"></span><b id="completeCount">0</b><small>Completed</small></button>
+    </section>
+    <section class="section-head home-section-head"><div><span class="mini-label">UP NEXT</span><h2>Today</h2></div><button type="button" class="text-btn" id="homeViewAll">View items</button></section>
+    <section class="agenda-card compact-agenda">
+      <div class="agenda-head"><div><strong id="agendaCount">Nothing due</strong></div><div class="segmented"><button type="button" class="active" data-agenda="today">Today</button><button type="button" data-agenda="week">7 days</button></div></div>
+      <div id="agendaList" class="agenda-list"></div>
+    </section>
+    <section class="home-tiles">
+      <button type="button" class="home-tile money-tile" id="homeMoney"><span class="tile-icon" data-icon="money"></span><span><small>30-day money</small><b id="cashflowNet">$0</b><em id="cashflowLabel">No money scheduled</em></span><span class="tile-arrow">›</span></button>
+      <button type="button" class="home-tile income-tile" id="homeIncome"><span class="tile-icon" data-icon="income"></span><span><small>Incoming</small><b id="incomingTotal">$0</b><em>next 30 days</em></span><span class="tile-arrow">›</span></button>
+    </section>
+  </div>
+
+  <!-- ITEMS -->
+  <div class="tab-page" data-tab-panel="items" hidden>
+    <section class="search-wrap"><span data-icon="search"></span><input id="searchInput" placeholder="Search your life admin..." autocomplete="off"><button type="button" id="clearSearch" class="clear-search hidden" aria-label="Clear search" data-icon="close"></button></section>
+    <section class="category-strip" id="categoryStrip">
+      <button type="button" class="category-chip active" data-category="all"><span data-icon="grid"></span>All</button><button type="button" class="category-chip" data-category="home"><span data-icon="home"></span>Home</button><button type="button" class="category-chip" data-category="car"><span data-icon="car"></span>Car</button><button type="button" class="category-chip" data-category="money"><span data-icon="money"></span>Money</button><button type="button" class="category-chip" data-category="personal"><span data-icon="personal"></span>Personal</button><button type="button" class="category-chip" data-category="family"><span data-icon="family"></span>Family</button><button type="button" class="category-chip" data-category="other"><span data-icon="other"></span>Other</button><button type="button" class="category-chip" data-category="income"><span data-icon="income"></span>Income</button>
+    </section>
+    <section class="filter-row"><button class="filter-chip active" data-item-filter="all">All</button><button class="filter-chip" data-item-filter="attention">Attention</button><button class="filter-chip" data-item-filter="overdue">Overdue</button><button class="filter-chip" data-item-filter="soon">Soon</button><button class="filter-chip" data-item-filter="completed">Done</button></section>
+    <section class="section-head list-head"><div><span class="mini-label">YOUR ADMIN</span><h2 id="listTitle">All items</h2><p id="listSubtitle">Everything in one place</p></div><span class="item-count" id="itemCount">0</span></section>
+    <section id="itemList" class="item-list"></section>
+  </div>
+
+  <!-- MONEY -->
+  <div class="tab-page" data-tab-panel="money" hidden>
+    <section class="money-hero"><span class="mini-label">MONEY CENTRE</span><strong id="moneyCentreNet">$0</strong><p>Projected over the next 30 days</p><div class="money-summary"><div><small>Incoming</small><b id="moneyCentreIn">$0</b></div><div><small>Outgoing</small><b id="moneyCentreOut">$0</b></div></div><div class="money-meter"><span id="moneyMeterIn"></span><span id="moneyMeterOut"></span></div></section>
+    <section class="money-detail-grid">
+      <div class="money-small"><span class="tile-icon" data-icon="chart"></span><small>Next 30 days</small><b id="upcomingCost">$0</b><em>outgoing</em></div>
+      <div class="money-small"><span class="tile-icon" data-icon="income"></span><small>Next 30 days</small><b id="incomingTotalMoney">$0</b><em>incoming</em></div>
+    </section>
+    <section class="cashflow-card money-card"><div class="cashflow-top"><div><span class="mini-label">CASHFLOW</span><strong id="cashIn">$0</strong><small id="cashflowLabelMoney">Incoming</small></div><span class="cashflow-icon" data-icon="chart"></span></div><div class="cashflow-bars"><div><span><b id="cashInBarLabel">$0</b><small>Incoming</small></span><i class="bar-track"><em id="inBar"></em></i></div><div><span><b id="cashOut">$0</b><small>Outgoing</small></span><i class="bar-track"><em id="outBar"></em></i></div></div></section>
+    <section class="income-card money-card"><div class="income-top"><div><span class="mini-label">INCOMING MONEY</span><strong id="incomingTotalCard">$0</strong></div><span data-icon="income"></span></div><div class="income-breakdown"><span><b id="weeklyIncome">$0</b><small>weekly</small></span><span><b id="monthlyIncome">$0</b><small>monthly equiv.</small></span><span><b id="annualIncome">$0</b><small>annual equiv.</small></span></div></section>
+    <section class="cost-card money-card"><div><div><span class="mini-label">UPCOMING COSTS</span><strong id="monthCost">$0</strong></div><span data-icon="chart"></span></div><div class="cost-breakdown"><span><b id="yearCost">$0</b><small>next 12 months</small></span></div></section>
+  </div>
+
+  <!-- CALENDAR -->
+  <div class="tab-page" data-tab-panel="calendar" hidden>
+    <section class="calendar-toolbar">
+      <button type="button" class="icon-btn" id="calendarPrev" aria-label="Previous month">‹</button>
+      <div><span class="mini-label">LIFE ADMIN CALENDAR</span><h2 id="calendarMonthTitle">October 2026</h2></div>
+      <button type="button" class="icon-btn" id="calendarNext" aria-label="Next month">›</button>
+    </section>
+    <section class="calendar-card">
+      <div class="calendar-weekdays"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+      <div id="calendarGrid" class="calendar-grid"></div>
+    </section>
+    <section class="calendar-day-head"><div><span class="mini-label">SELECTED DAY</span><h2 id="calendarSelectedTitle">Today</h2></div><button type="button" class="text-btn" id="calendarToday">Today</button></section>
+    <section id="calendarDayList" class="calendar-day-list"></section>
+    <button type="button" class="calendar-add" id="calendarAdd">＋ Add calendar event</button>
+  </div>
+
+  <!-- MORE -->
+  <div class="tab-page" data-tab-panel="more" hidden>
+    <section class="more-menu">
+      <button type="button" id="documentsBtn"><span class="more-icon" data-icon="paperclip"></span><span><b>Documents</b><small>Store and organise bills, receipts and photos</small></span><i>›</i></button>
+      <button type="button" id="settingsMenuBtn"><span class="more-icon" data-icon="settings"></span><span><b>Settings</b><small>Name, notifications and preferences</small></span><i>›</i></button>
+      <button type="button" id="exportMenuBtn"><span class="more-icon" data-icon="items"></span><span><b>Backup data</b><small>Export a copy of your Life Admin</small></span><i>›</i></button>
+    </section>
+    <section class="more-about"><div class="brand-row"><img class="brand-mark" src="life-admin-icon-v9.6-512.png" alt=""><span class="mini-label">LIFE ADMIN</span></div><h2>Less scrolling. More control.</h2><p>Your data stays stored locally on this device. Use Backup data regularly if you want a copy.</p></section>
+  </div>
+</main>
+
+<nav class="bottom-nav">
+  <button type="button" class="nav-item active" data-tab="home"><span class="nav-icon" data-icon="home"></span>Home</button>
+  <button type="button" class="nav-item" data-tab="items"><span class="nav-icon" data-icon="items"></span>Items</button>
+  <button type="button" class="nav-add" id="navAdd" aria-label="Add"><span data-icon="add"></span></button>
+  <button type="button" class="nav-item" data-tab="calendar"><span class="nav-icon" data-icon="calendar"></span>Calendar</button>
+  <button type="button" class="nav-item" data-tab="money"><span class="nav-icon" data-icon="money"></span>Money</button>
+</nav>
+</div>
+<div class="modal-backdrop hidden" id="modalBackdrop"><div class="modal" id="modal"></div></div>
+<input id="fileInput" type="file" accept="image/*,.pdf,.txt,.doc,.docx" hidden>
+<input id="documentInput" type="file" accept="image/*,.pdf,.txt,.doc,.docx,.xls,.xlsx,.csv" multiple hidden>
+<script src="app.js?v=9800" defer></script>
+</body>
+</html>
