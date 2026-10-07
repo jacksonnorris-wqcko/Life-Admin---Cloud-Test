@@ -1,6 +1,6 @@
 const $=(s,r=document)=>r.querySelector(s);
 const $$=(s,r=document)=>[...r.querySelectorAll(s)];
-const APP_VERSION="12.1.6";
+const APP_VERSION="12.1.7";
 const APP_CHANNEL="Beta";
 // ---------------- CLOUD SYNC / SUPABASE ----------------
 // Browser-safe Supabase publishable key. Database access is protected by RLS.
@@ -97,7 +97,7 @@ function refreshCloudSettings(){
 function openCloudAuth(mode="signin"){
   const isSignup=mode==="signup";
   openModal(`<div class="auth-modal">
-    <div class="auth-brand"><img src="life-admin-icon-v9.6-192.png" alt=""><div><span class="mini-label">LIFE ADMIN</span><strong>Keep your life in sync</strong></div><button type="button" class="close" id="close" aria-label="Close">${icons.close}</button></div>
+    <div class="auth-brand"><img class="brand-mark" data-brand-icon="192" src="icons/life-admin-forest-192.png" alt="Life Admin"><div><span class="mini-label">LIFE ADMIN</span><strong>Keep your life in sync</strong></div><button type="button" class="close" id="close" aria-label="Close">${icons.close}</button></div>
     <div class="auth-intro"><h3 id="authTitle">${isSignup?"Create your account":"Welcome back"}</h3><p id="authCopy">${isSignup?"Create an account to keep your Life Admin synced across your devices.":"Sign in to access your Life Admin wherever you use it."}</p></div>
     <div class="auth-switch" role="tablist" aria-label="Account access">
       <button type="button" class="${!isSignup?"active":""}" id="authSignInTab" role="tab" aria-selected="${!isSignup}">Sign in</button>
@@ -414,8 +414,8 @@ clock:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v
 plusCircle:`<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 8v8M8 12h8"/></svg>`
 };
 const THEMES={forest:{name:"Forest",meta:"Current Life Admin",color:"#176b4d"},ocean:{name:"Ocean",meta:"Cool and calm",color:"#176a8a"},slate:{name:"Slate",meta:"Clean and modern",color:"#40566f"},sunset:{name:"Sunset",meta:"Warm and friendly",color:"#a64b2a"},lavender:{name:"Lavender",meta:"Soft and personal",color:"#6c4aa1"},berry:{name:"Berry",meta:"Bold and playful",color:"#a43d68"},teal:{name:"Teal",meta:"Fresh and bright",color:"#0f766e"},amber:{name:"Amber",meta:"Warm and energetic",color:"#b7791f"}};
-function applyTheme(theme){const key=THEMES[theme]?theme:"forest";document.documentElement.dataset.theme=key;const meta=document.querySelector('meta[name="theme-color"]');if(meta){const colors=Object.fromEntries(Object.entries(THEMES).map(([k,v])=>[k,v.color]));meta.setAttribute("content",colors[key])}updateHomeScreenIcon(key)}
-function updateHomeScreenIcon(theme){const key=THEMES[theme]?theme:"forest";const icon=document.querySelector('link[rel="apple-touch-icon"]');if(icon)icon.href=`icons/life-admin-${key}-apple.png`;const favicon=document.querySelector('link[rel="icon"]');if(favicon)favicon.href=`icons/life-admin-${key}-192.png`}
+function applyTheme(theme){const key=THEMES[theme]?theme:"forest";document.documentElement.dataset.theme=key;const meta=document.querySelector('meta[name="theme-color"]');if(meta){const colors=Object.fromEntries(Object.entries(THEMES).map(([k,v])=>[k,v.color]));meta.setAttribute("content",colors[key])}updateInAppBrandIcons(key)}
+function updateInAppBrandIcons(theme){const key=THEMES[theme]?theme:"forest";document.querySelectorAll("[data-brand-icon]").forEach(img=>{const size=img.dataset.brandIcon||"512";const src=`icons/life-admin-${key}-${size}.png`;if(img.getAttribute("src")!==src)img.setAttribute("src",src)})}
 let state=loadState();
 let view={category:"all",filter:"attention",search:"",agenda:"today"};
 let calendarView={month:startOfMonth(today()),selected:dateKey(today())};

@@ -7,16 +7,16 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Life Admin</title>
-<link rel="icon" type="image/png" sizes="192x192" href="life-admin-icon-v9.6-192.png">
-<link rel="apple-touch-icon" href="life-admin-icon-v9.6-apple.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/life-admin-mono-192.png">
+<link rel="apple-touch-icon" href="icons/life-admin-mono-apple.png">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="stylesheet" href="styles.css?v=12160">
+<link rel="stylesheet" href="styles.css?v=12170">
 <style>svg{fill:none!important;stroke:currentColor!important;stroke-width:1.8!important;stroke-linecap:round!important;stroke-linejoin:round!important;vector-effect:non-scaling-stroke!important}svg circle,svg rect{fill:none!important}</style>
 </head>
 <body>
 <div class="app-shell">
 <header class="topbar">
-  <div class="brand-lockup"><img class="brand-mark" src="life-admin-icon-v9.6-512.png" alt="Life Admin"><div class="header-copy"><div class="eyebrow" id="tabEyebrow">LIFE ADMIN</div><h1 id="pageTitle">Good morning<span id="userName"></span></h1><p class="page-subtitle" id="pageSubtitle" hidden></p></div></div>
+  <div class="brand-lockup"><img class="brand-mark" data-brand-icon="512" src="icons/life-admin-forest-512.png" alt="Life Admin"><div class="header-copy"><div class="eyebrow" id="tabEyebrow">LIFE ADMIN</div><h1 id="pageTitle">Good morning<span id="userName"></span></h1><p class="page-subtitle" id="pageSubtitle" hidden></p></div></div>
   <div class="header-actions"><button type="button" class="icon-btn account-header-btn" id="accountBtn" aria-label="Account and sync"><span class="header-cloud-icon" data-icon="cloud"></span><span class="header-status-dot" id="headerStatusDot" aria-hidden="true"></span></button><button type="button" class="icon-btn" id="settingsBtn" aria-label="Settings" data-icon="settings"></button><button type="button" class="icon-btn" id="moreHeaderBtn" aria-label="More" data-icon="grid"></button></div>
 </header>
 <main>
@@ -88,7 +88,7 @@
       <button type="button" id="settingsMenuBtn"><span class="more-icon" data-icon="settings"></span><span><b>Settings</b><small>Name, notifications and preferences</small></span><i>›</i></button>
       <button type="button" id="exportMenuBtn"><span class="more-icon" data-icon="items"></span><span><b>Backup data</b><small>Export a copy of your Life Admin</small></span><i>›</i></button>
     </section>
-    <section class="more-about"><div class="brand-row"><img class="brand-mark" src="life-admin-icon-v9.6-512.png" alt=""><span class="mini-label">LIFE ADMIN</span></div><h2>Less scrolling. More control.</h2><p>Your data stays stored locally on this device. Use Backup data regularly if you want a copy.</p></section>
+    <section class="more-about"><div class="brand-row"><img class="brand-mark" data-brand-icon="512" src="icons/life-admin-forest-512.png" alt=""><span class="mini-label">LIFE ADMIN</span></div><h2>Less scrolling. More control.</h2><p>Your data stays stored locally on this device. Use Backup data regularly if you want a copy.</p></section>
   </div>
 </main>
 
@@ -104,6 +104,6 @@
 <input id="fileInput" type="file" accept="image/*,.pdf,.txt,.doc,.docx" hidden>
 <input id="documentInput" type="file" accept="image/*,.pdf,.txt,.doc,.docx,.xls,.xlsx,.csv" multiple hidden>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js?v=12160" defer></script>
+<script src="app.js?v=12170" defer></script>
 </body>
 </html>
