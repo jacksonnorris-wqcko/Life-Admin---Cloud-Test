@@ -425,7 +425,11 @@ function loadState(){try{const s=JSON.parse(localStorage.getItem(STORE));if(s&&A
 function save(){
   localStorage.setItem(STORE,JSON.stringify(state));
   if(cloudUser && !suppressCloudDirty){
+    const wasDirty=localStorage.getItem("lifeAdminCloudDirty")==="1";
     localStorage.setItem("lifeAdminCloudDirty","1");
+    if(!wasDirty){
+      setTimeout(()=>toast("Saved on this device — tap Sync now to save it to your account"),0);
+    }
   }
   render();
 }
@@ -654,6 +658,16 @@ function render(){
   if(incomingChanged)localStorage.setItem(STORE,JSON.stringify(state));
   updateHeader();
   refreshCloudSettings();
+  const homeSyncBanner=$("#homeSyncBanner");
+  if(homeSyncBanner){
+    const showSyncBanner=!!cloudUser && localStorage.getItem("lifeAdminCloudDirty")==="1";
+    homeSyncBanner.hidden=!showSyncBanner;
+    if(showSyncBanner){
+      const btn=$("#homeSyncNow");
+      if(btn)btn.onclick=cloudSync;
+    }
+    installIcons();
+  }
   const active=state.items.filter(i=>!i.completed&&i.moneyType!=="income");
   const activeMoney=state.items.filter(i=>!i.completed);
   const overdue=active.filter(i=>daysUntil(i.due)<0);
