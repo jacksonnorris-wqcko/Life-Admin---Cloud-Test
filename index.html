@@ -6,11 +6,11 @@
 <meta name="theme-color" content="#f7f8f6">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<title>Life Admin · Friends &amp; Family Beta</title>
+<title>Life Admin · V0.0.2 · Friends &amp; Family Beta</title>
 <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
 <link rel="manifest" href="manifest-v12.1.10.webmanifest">
-<link rel="stylesheet" href="styles.css?v=001">
+<link rel="stylesheet" href="styles.css?v=002">
 <style>svg{fill:none!important;stroke:currentColor!important;stroke-width:1.8!important;stroke-linecap:round!important;stroke-linejoin:round!important;vector-effect:non-scaling-stroke!important}svg circle,svg rect{fill:none!important}</style>
 </head>
 <body>
@@ -39,6 +39,11 @@
     <section class="home-tiles">
       <button type="button" class="home-tile money-tile" id="homeMoney"><span class="tile-icon" data-icon="money"></span><span><small>30-day money</small><b id="cashflowNet">$0</b><em id="cashflowLabel">No money scheduled</em></span><span class="tile-arrow">›</span></button>
       <button type="button" class="home-tile income-tile" id="homeIncome"><span class="tile-icon" data-icon="income"></span><span><small>Incoming</small><b id="incomingTotal">$0</b><em>next 30 days</em></span><span class="tile-arrow">›</span></button>
+    </section>
+    <section class="home-sync-banner" id="homeSyncBanner" hidden aria-live="polite">
+      <span class="home-sync-banner-icon" data-icon="cloud"></span>
+      <div class="home-sync-banner-copy"><strong>Changes saved on this device</strong><small>Sync now to save them to your account and other devices.</small></div>
+      <button type="button" class="home-sync-banner-btn" id="homeSyncNow">Sync now</button>
     </section>
   </div>
 
